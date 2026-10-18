@@ -54,28 +54,31 @@
 	}
 
 	/**
-	 * Live preview for the sidebar label field.
+	 * Live preview + dirty marker for the sidebar row form.
 	 *
-	 * The saved state is already drawn by the server in the "Now reads" row.
-	 * This only handles the unsaved draft: typing re-renders "After saving" so
-	 * the result is visible before committing, and the message says whether the
-	 * draft differs from what is stored. With this script absent the field
-	 * still saves — you just don't get the preview.
+	 * The saved state is drawn by the server in the "Now reads" row. This
+	 * handles the draft: ticking or typing re-renders "After saving" instantly
+	 * and says whether the draft differs from what is stored, so both controls
+	 * give the same feedback and neither saves without the button. With this
+	 * script absent the form still saves — you just don't get the preview.
 	 */
 	function bindLabelPreview(root) {
-		var input = root.querySelector('[data-hc-label]');
+		var form = document.getElementById('hidden-categories-display-form');
+		if (!form) { return; }
+		var input = form.querySelector('[data-hc-label]');
+		var box = form.querySelector('[data-hc-count]');
 		var live = root.querySelector('[data-hc-live]');
 		var msg = root.querySelector('[data-hc-live-msg]');
-		if (!input || !live || !msg) { return; }
+		var dirty = root.querySelector('[data-hc-dirty]');
+		if (!input || !box || !live || !msg) { return; }
 
 		// the real hidden count, taken from the saved row so this cannot drift
 		var num = root.querySelector('.hc-preview .hc-row-num');
 		var count = num ? num.textContent : '';
-		// input.value, not getAttribute('value'): the attribute is the literal
-		// markup, so a label containing quotes or spaces would be compared
-		// against the wrong string
-		var saved = input.value;
-		var countOn = !input.disabled;
+
+		// the saved state, captured once from the server-rendered form
+		var savedLabel = input.value.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+		var savedCount = box.defaultChecked;
 
 		function esc(s) {
 			return String(s).replace(/[&<>"']/g, function (c) {
@@ -86,27 +89,35 @@
 		function render() {
 			var label = input.value.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
 			var caret = '<span class="hc-caret" aria-hidden="true">&#9662;</span>';
-			if (!countOn) {
+			var changed = (label !== savedLabel) || (box.checked !== savedCount);
+
+			if (!box.checked) {
 				live.innerHTML = caret;
-				msg.textContent = 'nothing drawn — the count is off';
-				return;
-			}
-			if (label === '') {
+			} else if (label === '') {
 				live.innerHTML = caret + '<span class="hc-row-num">' + esc(count) + '</span>';
-				msg.textContent = label === saved
-					? 'unchanged — showing the number alone'
-					: 'differs from what is saved — press Save label';
-				return;
+			} else {
+				live.innerHTML = caret
+					+ '<span class="hc-row-label">' + esc(label) + '</span>'
+					+ '<span class="hc-row-num">' + esc(count) + '</span>';
 			}
-			live.innerHTML = caret
-				+ '<span class="hc-row-label">' + esc(label) + '</span>'
-				+ '<span class="hc-row-num">' + esc(count) + '</span>';
-			msg.textContent = label === saved
-				? 'unchanged'
-				: 'unsaved draft — press Save label to keep it';
+
+			if (!box.checked) {
+				msg.textContent = 'the row will show the caret only';
+			} else if (label === '' && !changed) {
+				msg.textContent = 'unchanged — showing the number alone';
+			} else if (!changed) {
+				msg.textContent = 'unchanged';
+			} else {
+				msg.textContent = 'preview of your unsaved changes';
+			}
+
+			if (dirty) {
+				dirty.textContent = changed ? 'Unsaved changes — press Save' : '';
+			}
 		}
 
 		input.addEventListener('input', render);
+		box.addEventListener('change', render);
 		render();
 	}
 

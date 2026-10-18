@@ -353,7 +353,7 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	gap: 0.6em;
 	flex-wrap: wrap;
 }
-/* the two sidebar display switches: one row each, checkbox left, hint right */
+/* the sidebar row form: count switch, label field, one Save bar */
 .hc-switch-row {
 	display: flex;
 	align-items: center;
@@ -361,24 +361,31 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	flex-wrap: wrap;
 	padding: 0.3em 0;
 }
-.hc-switch-row + .hc-switch-row {
-	border-top: 1px solid rgba(128, 128, 128, 0.18);
-}
 .hc-switch {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.45em;
 	cursor: pointer;
-	min-width: 17em;
 }
-.hc-switch input:disabled + span {
-	opacity: 0.5;
+.hc-switch-block {
+	display: flex;
+	margin: 0.35em 0 0.5em;
+	padding: 0.35em 0;
+}
+.hc-save-bar {
+	display: flex;
+	align-items: center;
+	gap: 0.7em;
+	margin-top: 0.55em;
+	padding-top: 0.55em;
+	border-top: 1px solid rgba(128, 128, 128, 0.18);
+}
+.hc-dirty {
+	font-size: 0.86em;
+	color: #d9a13b;
 }
 
-/* the label field: caption above, input beside the save button */
-.hc-label-form {
-	align-items: flex-end;
-}
+/* the label field: caption above, input beside the Save bar */
 .hc-label-field {
 	display: inline-flex;
 	flex-direction: column;

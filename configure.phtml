@@ -164,43 +164,36 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 			</span>
 		</div>
 
-		<form method="post" action="<?= $url ?>" class="hc-switch-row">
+		<?php
+		// Both controls in ONE form with ONE Save button. Saving posts the full
+		// pair (count state + label text) so the two can never be saved out of
+		// step with each other — the old separate-form version had to guess
+		// which control was meant, and the checkbox auto-submitted with nothing
+		// on screen to confirm it.
+		?>
+		<form method="post" action="<?= $url ?>" id="hidden-categories-display-form">
 			<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
 			<input type="hidden" name="act" value="display" />
-			<input type="hidden" name="what" value="count" />
-			<input type="hidden" name="on" value="<?= $showCount ? '0' : '1' ?>" />
-			<label class="hc-switch">
-				<input type="checkbox" <?= $showCount ? 'checked' : '' ?> onchange="this.form.submit()" />
+
+			<label class="hc-switch hc-switch-block">
+				<input type="checkbox" name="count" value="1" <?= $showCount ? 'checked' : '' ?> data-hc-count />
 				<span>Show how many categories are hidden</span>
 			</label>
-			<span class="hc-hint"><?= $showCount
-				? 'The number is drawn' . ($rowLabel === '' ? ' on its own.' : ' after the label.')
-				: 'Nothing is drawn but the caret.' ?></span>
-		</form>
 
-		<form method="post" action="<?= $url ?>" class="hc-switch-row hc-label-form">
-			<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
-			<input type="hidden" name="act" value="display" />
-			<input type="hidden" name="what" value="label" />
 			<label class="hc-label-field">
 				<span>Label in front of the number</span>
 				<input type="text" name="label" class="hc-label-input"
 					value="<?= htmlspecialchars($rowLabel, ENT_QUOTES) ?>"
 					placeholder="leave empty for the number on its own"
-					maxlength="40" autocomplete="off" data-hc-label
-					<?= $showCount ? '' : 'disabled="disabled"' ?> />
+					maxlength="40" autocomplete="off" data-hc-label />
 			</label>
-			<button class="btn" type="submit" <?= $showCount ? '' : 'disabled="disabled"' ?>>Save label</button>
-			<span class="hc-hint">
-				<?php if (!$showCount) { ?>
-					Needs the count on — the label sits in front of the number.
-				<?php } elseif ($rowLabel === '') { ?>
-					Empty: the row shows the number on its own.
-				<?php } else { ?>
-					Live: typing here previews the row below; press Save to keep it.
-				<?php } ?>
-			</span>
+
+			<div class="hc-save-bar">
+				<button class="btn btn-important" type="submit" data-hc-save>Save</button>
+				<span class="hc-dirty" data-hc-dirty aria-live="polite"></span>
+			</div>
 		</form>
+
 		<div class="hc-live" aria-live="polite">
 			<span class="hc-live-cap">After saving</span>
 			<span class="hc-preview-row" data-hc-live>

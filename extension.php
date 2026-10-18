@@ -780,33 +780,36 @@ class HiddenCategoriesExtension extends Minz_Extension
 			 * disagree. Safe to press repeatedly.
 			 */
 			case 'display':
-				// The sidebar row settings. Each control is posted as its own
-				// form with the state it is moving to, so saving one can never
-				// silently reset the other (an unchecked checkbox and an empty
-				// text field both send nothing at all). 'what' names the one
-				// that was changed.
-				$what = Minz_Request::paramStringNull('what', true);
-				if ($what === 'count') {
-					$r = $this->store()->setShowCount(Minz_Request::paramStringNull('on', true) === '1');
-				} elseif ($what === 'label') {
-					// paramStringNull, so a field that is present but empty is
-					// respected as "number only" instead of being treated as
-					// absent and leaving the old label in place.
-					$label = Minz_Request::paramStringNull('label', true);
-					if ($label === null) {
-						Minz_Request::bad('Save failed: the label field was missing, so nothing was changed.', $this->selfUrl());
-						return;
-					}
-					$r = $this->store()->setRowLabel($label);
-				} else {
-					Minz_Request::bad('Save failed: the form did not say which option to change, so nothing was changed.', $this->selfUrl());
+				// The sidebar row's two settings, saved together from one form
+				// and one Save button. Both are posted every time: an unchecked
+				// box sends no `count`, and an emptied field sends `label` as
+				// empty, so this handler reads the full desired state rather
+				// than guessing which control was touched.
+				$label = Minz_Request::paramStringNull('label', true);
+				if ($label === null) {
+					Minz_Request::bad('Save failed: the form was incomplete, so nothing was changed.', $this->selfUrl());
 					return;
 				}
-				if ($r['ok']) {
-					Minz_Request::good($r['message'], $this->selfUrl());
-				} else {
-					Minz_Request::bad($r['message'], $this->selfUrl());
+				$countOn = Minz_Request::paramStringNull('count', true) === '1';
+
+				$rc = $this->store()->setShowCount($countOn);
+				if (!$rc['ok']) {
+					Minz_Request::bad($rc['message'], $this->selfUrl());
+					return;
 				}
+				$rl = $this->store()->setRowLabel($label);
+				if (!$rl['ok']) {
+					Minz_Request::bad($rl['message'], $this->selfUrl());
+					return;
+				}
+				// Name the resulting row in the message, so the confirmation
+				// says what changed rather than just "saved".
+				$now = !$countOn
+					? 'the caret only'
+					: ($this->store()->rowLabel() === ''
+						? 'the number on its own'
+						: '"' . $this->store()->rowLabel() . '" and the number');
+				Minz_Request::good('Saved: the sidebar row shows ' . $now . '.', $this->selfUrl());
 				return;
 
 			case 'restore':

@@ -93,11 +93,11 @@ The row at the bottom of the sidebar shows **how many categories are hidden**, l
 | **Show how many categories are hidden** (on by default) | off — the row draws nothing but the caret: no number, no label |
 | **Label in front of the number** (default `Hidden`) | type any text, or clear it to show the number on its own |
 
-The settings show the row twice: **Now reads** is what is saved, **After saving** follows what
-you type before you commit it. Neither setting changes what is hidden, what Strict enforces, or
-the eye button — they only change this row's text. The row itself always stays: it's how you open
-the list, and the full text is in its tooltip. With the count switched off, someone glancing at
-the screen learns nothing from it.
+Both settings save with **one Save button** and give the same feedback: **After saving** updates as
+you tick the box or type, and an "Unsaved changes" line appears until you commit. Neither setting
+changes what is hidden, what Strict enforces, or the eye button — they only change this row's text.
+The row itself always stays: it's how you open the list, and the full text is in its tooltip. With
+the count switched off, someone glancing at the screen learns nothing from it.
 
 ## What "private" covers — and what it doesn't
 
