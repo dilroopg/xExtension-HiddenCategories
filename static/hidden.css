@@ -121,6 +121,29 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	background: rgba(128, 128, 128, 0.1);
 	color: inherit;
 	text-align: left;
+	display: flex;
+	align-items: center;
+	gap: 0.5em;
+}
+.hc-view-btn .hc-ico {
+	display: inline-flex;
+	flex: 0 0 auto;
+	width: 1.15em;
+	height: 1.15em;
+}
+.hc-view-btn .hc-ico svg {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+.hc-view-btn .hc-txt {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+/* the icon reads the state without parsing the label */
+.hc-view-btn[data-hc-state="hidden"] .hc-ico {
+	opacity: 0.65;
 }
 .hc-view-btn:hover {
 	background: rgba(128, 128, 128, 0.2);

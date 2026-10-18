@@ -203,10 +203,39 @@
 	// Deliberately ONE control, in one place, cycling three states. Anything
 	// that hides things (settings page, subscription page, right-click) calls
 	// the same server action, so this button always reflects reality.
+	// Three eye states, one per view. Drawn inline with currentColor so they
+	// take the theme's text colour and inherit its size, with no icon-font or
+	// image dependency. 16x16 viewBox keeps them crisp at sidebar scale.
+	//
+	//   closed  -> hidden:   what you hid is gone
+	//   peek    -> revealed: hidden ones are back, showing among the rest
+	//   open    -> only:     you are looking at just the hidden ones
+	var ICONS = {
+		hidden:
+			'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"'
+			+ ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+			+ '<path d="M3 3l18 18"/>'
+			+ '<path d="M10.6 6.2A9.7 9.7 0 0 1 12 6c5 0 9 4.5 9 6 0 .8-.9 2.3-2.4 3.6"/>'
+			+ '<path d="M6.2 7.7C4.1 9.1 3 10.6 3 12c0 1.5 4 6 9 6 1.4 0 2.7-.3 3.9-.9"/>'
+			+ '<path d="M9.9 10.1a3 3 0 0 0 4.2 4.2"/></svg>',
+		revealed:
+			'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"'
+			+ ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+			+ '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/>'
+			+ '<circle cx="12" cy="12" r="2.6"/>'
+			+ '<path d="M4 19.5c5-3.5 11-3.5 16 0"/></svg>',
+		only:
+			'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"'
+			+ ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+			+ '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/>'
+			+ '<circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg>'
+	};
+
 	var LABELS = {
-		hidden: { text: 'Show hidden', title: 'Reveal the hidden categories in the sidebar' },
-		revealed: { text: 'Show only hidden', title: 'Dim everything else and show only hidden categories' },
-		only: { text: 'Hide them again', title: 'Go back to hiding them' }
+		// label names what the NEXT click does; the icon shows the CURRENT state
+		hidden: { text: 'Show hidden', title: 'Hidden categories are hidden \u2014 click to reveal them' },
+		revealed: { text: 'Show only hidden', title: 'Hidden categories are showing again \u2014 click to see only those' },
+		only: { text: 'Hide them again', title: 'You are seeing only hidden categories \u2014 click to hide them again' }
 	};
 
 	function buildButton() {
@@ -224,6 +253,7 @@
 			btn.type = 'button';
 			btn.id = 'hc-view-btn';
 			btn.className = 'hc-view-btn';
+			btn.setAttribute('data-hc-state', 'hidden');
 			btn.addEventListener('click', function (ev) {
 				ev.preventDefault();
 				post({ act: 'view', to: next });
@@ -239,9 +269,13 @@
 		}
 		bar.style.display = '';
 		var l = LABELS[view] || LABELS.hidden;
-		b.textContent = l.text;
+		// icon = current state, label = next action; kept in two spans so the
+		// icon never has to be re-parsed on every render
+		b.innerHTML = '<span class="hc-ico">' + (ICONS[view] || ICONS.hidden) + '</span>'
+			+ '<span class="hc-txt">' + l.text + '</span>';
 		b.title = l.title;
 		b.setAttribute('data-hc-state', view);
+		b.setAttribute('aria-label', l.text + ' \u2014 ' + l.title);
 	}
 
 	// ---- 6. the sidebar "Hidden (N)" section ------------------------------
