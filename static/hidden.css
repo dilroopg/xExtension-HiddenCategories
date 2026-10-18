@@ -43,9 +43,16 @@ html[data-hc-mode="hide"] .hc-stream-out {
 	display: none !important;
 }
 
-/* ---- 'revealed' view: hidden categories come back, visibly marked ----- */
+/* ---- 'revealed' (peeking): hidden categories come back and MIX ---------
+ * The stream is unfiltered in this state too (see markStream), so these rows
+ * are simply part of the list again — tinted so you can tell which ones you
+ * had hidden, but not treated as special or dimmed into unreadability.
+ */
 html[data-hc-view="revealed"] li.tree-folder.category[data-hc-hidden="1"] {
-	opacity: 0.75;
+	opacity: 0.9;
+}
+html[data-hc-view="revealed"] li.tree-folder.category[data-hc-hidden="1"] > .tree-folder-title {
+	color: #5cc46a;
 }
 html[data-hc-view="revealed"] li.tree-folder.category[data-hc-hidden="1"] > .tree-folder-title::after,
 html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] > .tree-folder-title::after {
@@ -131,31 +138,41 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	width: 1.15em;
 	height: 1.15em;
 }
+/* the eye is green: it is the "show/hide what is hidden" control.
+ * The closed state keeps the colour but dimmer, reading as "off". */
+.hc-view-btn .hc-ico {
+	color: #5cc46a;
+}
 .hc-view-btn .hc-ico svg {
 	width: 100%;
 	height: 100%;
 	display: block;
+	stroke: currentColor;
 }
 .hc-view-btn .hc-txt {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-/* the icon reads the state without parsing the label */
 .hc-view-btn[data-hc-state="hidden"] .hc-ico {
 	opacity: 0.65;
 }
 .hc-view-btn:hover {
 	background: rgba(128, 128, 128, 0.2);
 }
-/* the state is legible without reading the label */
 .hc-view-btn[data-hc-state="revealed"] {
-	border-color: rgba(120, 175, 255, 0.65);
+	border-color: rgba(92, 196, 106, 0.65);
 }
 .hc-view-btn[data-hc-state="only"] {
 	border-color: rgba(255, 190, 90, 0.75);
 	background: rgba(255, 190, 90, 0.14);
 	font-weight: 600;
+}
+
+/* the folder's open state: a class, not an inline style, so a theme rule
+ * cannot override it and the toggle cannot fight the theme's own .active */
+#hc-hidden-tree .tree-folder-items.hc-open {
+	display: block;
 }
 
 /* ---- the sidebar "Hidden (N)" section ---------------------------------
@@ -252,6 +269,13 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	width: 1.05em;
 	height: 1.05em;
 	display: block;
+}
+/* the lock is red: it is the "stop this" control */
+.hc-lock-btn {
+	color: #e06c5a;
+}
+.hc-lock-ico {
+	color: #e06c5a;
 }
 .hc-lock-btn:hover {
 	background: rgba(128, 128, 128, 0.22);

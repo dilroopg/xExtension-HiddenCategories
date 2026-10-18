@@ -132,15 +132,19 @@
 			var hid = !!isHidden[id];
 			el.setAttribute('data-hc-hidden', hid ? '1' : '0');
 
-			// Stream filtering differs per view, so it is decided here rather
-			// than in a static rule:
-			//   hidden / revealed -> hide articles from hidden categories
-			//   only              -> hide everything that is NOT hidden
-			// 'revealed' deliberately does NOT flood the stream: revealing is a
-			// sidebar act (finding what you hid), not a stream act.
+			// Three states, three stream behaviours — this is the whole point of
+			// having three:
+			//   hidden   (closed eye)  -> hide articles from hidden categories
+			//   revealed (peeking eye) -> MIX: nothing is filtered, hidden and
+			//                             visible articles appear together
+			//   only     (open eye)    -> hide everything that is NOT hidden
+			// 'revealed' previously kept filtering the stream, which made the
+			// state look like it did nothing at all.
 			var out;
 			if (view === 'only') {
 				out = !hid;
+			} else if (view === 'revealed') {
+				out = false;
 			} else {
 				out = hid;
 			}
@@ -259,7 +263,7 @@
 	var LABELS = {
 		// label names what the NEXT click does; the icon shows the CURRENT state
 		hidden: { text: 'Show hidden', title: 'Hidden categories are hidden \u2014 click to reveal them' },
-		revealed: { text: 'Show only hidden', title: 'Hidden categories are showing again \u2014 click to see only those' },
+		revealed: { text: 'Show only hidden', title: 'Peeking: hidden categories are mixed back in \u2014 click to see only those' },
 		only: { text: 'Hide them again', title: 'You are seeing only hidden categories \u2014 click to hide them again' }
 	};
 
@@ -396,9 +400,12 @@
 		title.href = '#';
 		title.setAttribute('role', 'button');
 		title.setAttribute('aria-expanded', view === 'hidden' ? 'false' : 'true');
+		title.title = cats.length + ' hidden ' + (cats.length === 1 ? 'category' : 'categories');
 		title.innerHTML = '<button class="dropdown-toggle" type="button" title="Expand">'
 			+ '<span class="hc-caret">&#9662;</span></button>'
-			+ '<span class="title">Hidden (' + cats.length + ')</span>';
+			// just the number: the row should not announce that something is
+			// hidden to anyone glancing at the screen
+			+ '<span class="title">' + cats.length + '</span>';
 
 		var chip = document.createElement('span');
 		chip.className = 'hc-chip';
@@ -409,7 +416,7 @@
 		title.appendChild(chip);
 
 		var ul = document.createElement('ul');
-		ul.className = 'tree-folder-items';
+		ul.className = 'tree-folder-items' + (view === 'hidden' ? '' : ' hc-open');
 		ul.style.display = view === 'hidden' ? 'none' : '';
 
 		cats.forEach(function (id) {
@@ -444,12 +451,22 @@
 			ul.appendChild(item);
 		});
 
-		title.addEventListener('click', function (ev) {
+		// The row is an <a href="#">; themes and core scripts also bind click and
+		// preventDefault, and an inline `display` can be overridden by a CSS
+		// `.active` class the theme toggles. So: own the click in CAPTURE phase,
+		// stop it reaching anything else, and toggle a class instead of an inline
+		// style — the class is what the CSS and the theme both understand.
+		var toggle = function (ev) {
 			ev.preventDefault();
-			var open = ul.style.display !== 'none';
-			ul.style.display = open ? 'none' : '';
-			title.setAttribute('aria-expanded', open ? 'false' : 'true');
-		});
+			ev.stopPropagation();
+			var open = !ul.classList.contains('hc-open');
+			ul.classList.toggle('hc-open', open);
+			title.setAttribute('aria-expanded', open ? 'true' : 'false');
+		};
+		title.addEventListener('click', toggle, true);
+		// the theme's caret button inside the row would otherwise swallow it
+		var caret = title.querySelector('.dropdown-toggle');
+		if (caret) { caret.addEventListener('click', toggle, true); }
 
 		li.appendChild(title);
 		li.appendChild(ul);

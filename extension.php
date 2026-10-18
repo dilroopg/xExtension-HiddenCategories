@@ -228,6 +228,45 @@ class HiddenCategoriesExtension extends Minz_Extension
 	}
 
 	/**
+	 * Peeking: restore every enforced feed to its original value WITHOUT
+	 * dropping the snapshots, so leaving the peeking state can re-apply them.
+	 *
+	 * This is the only way "mixed" can mean anything in Strict: at -10 the
+	 * server does not send those articles at all, so the stream has nothing to
+	 * mix. The snapshots stay on disk precisely so the next sweep knows which
+	 * feeds to hide again, and the original values are what they are restored to.
+	 *
+	 * @return array{ok:bool,enforced:int,restored:int,skipped:int,failed:int,message:string}
+	 */
+	private function suspendEnforcement(): array
+	{
+		$store = $this->store();
+		$restored = 0;
+		$failed = 0;
+		$held = [];   // feed_id => orig_priority, kept so re-enforcing is exact
+		foreach ($store->snapshots() as $snap) {
+			$held[$snap['feed_id']] = $snap['orig_priority'];
+		}
+		foreach ($held as $feedId => $orig) {
+			if (!$this->writePriority($feedId, $orig)) {
+				$failed++;
+				continue;
+			}
+			$restored++;
+		}
+		if ($failed > 0) {
+			return ['ok' => false, 'enforced' => 0, 'restored' => $restored,
+				'skipped' => 0, 'failed' => $failed,
+				'message' => $failed . ' feed(s) could not be shown'];
+		}
+		// remember that the snapshots are "parked" so the reconcile in init()
+		// does not immediately re-hide them on the next page load
+		$store->setMeta('peek_parked', '1');
+		return ['ok' => true, 'enforced' => 0, 'restored' => $restored,
+			'skipped' => 0, 'failed' => 0, 'message' => ''];
+	}
+
+	/**
 	 * Converge the feed settings to the hidden set, and prove it.
 	 *
 	 * This is the only function that writes `priority`. Everything that can
@@ -248,6 +287,9 @@ class HiddenCategoriesExtension extends Minz_Extension
 		$store = $this->store();
 		$strict = $store->mode() === 'strict';
 		$hiddenIds = $store->hiddenIds();
+		if ($apply) {
+			$store->setMeta('peek_parked', '0');   // a sweep ends any peek
+		}
 		$enforced = 0;
 		$restored = 0;
 		$skipped = 0;
@@ -415,6 +457,17 @@ class HiddenCategoriesExtension extends Minz_Extension
 					$this->sweepFeeds();
 				}
 				return;
+			}
+
+			// Peeking intentionally leaves the feeds visible while keeping the
+			// snapshots. Re-hiding them here would undo the peek on the very
+			// next page load.
+			if ($store->getMeta('peek_parked', '0') === '1' && $store->view() === 'revealed') {
+				return;
+			}
+			if ($store->getMeta('peek_parked', '0') === '1') {
+				// left the peek by any other route: clear the flag and converge
+				$store->setMeta('peek_parked', '0');
 			}
 
 			$hidden = $store->hiddenIds();
@@ -663,17 +716,27 @@ class HiddenCategoriesExtension extends Minz_Extension
 				}
 				$to = trim($to);
 				if (!in_array($to, HiddenCategoriesStore::VIEWS, true)) {
-					Minz_Request::bad('Unknown view "' . $to . '": nothing was changed.', $this->selfUrl());
+					Minz_Request::bad('Unknown view "' . $to . '"' . ': nothing was changed.', $this->selfUrl());
 					return;
 				}
 				if (!$this->store()->setView($to)) {
 					Minz_Request::bad('Could not save the view: nothing was changed.', $this->selfUrl());
 					return;
 				}
+				// PEEKING in Strict must actually lift the hiding, or there is
+				// nothing to mix: at priority -10 the server never sends those
+				// articles, so the stream could only ever show an empty category.
+				// Suspending enforcement restores them to their original value;
+				// leaving 'revealed' enforces them again. Light has nothing to
+				// lift, so this is a no-op there.
+				$sweep = $this->store()->mode() === 'strict'
+					? ($to === 'revealed' ? $this->suspendEnforcement() : $this->sweepFeeds())
+					: ['ok' => true, 'enforced' => 0, 'restored' => 0, 'skipped' => 0, 'failed' => 0, 'message' => ''];
+				$detail = $this->sweepMessage($sweep);
 				Minz_Request::good(
-					$to === 'only' ? 'Showing only hidden categories.'
-						: ($to === 'revealed' ? 'Hidden categories shown again (still excluded from the stream).'
-							: 'Hidden categories are hidden again.'),
+					($to === 'only' ? 'Showing only hidden categories.'
+						: ($to === 'revealed' ? 'Peeking: hidden categories are mixed back in.'
+							: 'Hidden categories are hidden again.')) . $detail,
 					$this->selfUrl()
 				);
 				return;
