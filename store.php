@@ -172,7 +172,7 @@ final class HiddenCategoriesStore
 	{
 		$this->setMetaIfAbsent('schema', (string)self::SCHEMA);
 		$this->setMetaIfAbsent('mode', 'light');
-		$this->setMetaIfAbsent('only', '0');
+		$this->setMetaIfAbsent('view', 'hidden');
 	}
 
 	// ---------------------------------------------------------------- meta
@@ -335,15 +335,40 @@ final class HiddenCategoriesStore
 		}
 	}
 
-	/** "Only hidden" view: stored per user, ignored when the extension is off. */
-	public function only(): bool
+	/**
+	 * The one button's state. Three values, cycling in this order:
+	 *
+	 *   hidden    normal: hidden categories are gone from the sidebar and stream
+	 *   revealed  hidden categories are shown again and marked, stream unchanged
+	 *   only      hidden categories are emphasised, everything else dimmed, and
+	 *             the stream shows only hidden categories
+	 *
+	 * Stored as text rather than a boolean so a third state can be added later
+	 * without a migration, and so an unexpected value degrades to 'hidden'
+	 * (the safe state: things you hid stay hidden) rather than to 'only'.
+	 */
+	public const VIEWS = ['hidden', 'revealed', 'only'];
+
+	public function view(): string
 	{
-		return $this->getMeta('only', '0') === '1';
+		$v = $this->getMeta('view', 'hidden');
+		return in_array($v, self::VIEWS, true) ? $v : 'hidden';
 	}
 
-	public function setOnly(bool $only): bool
+	/** The state the button moves to on the next click. */
+	public function nextView(): string
 	{
-		return $this->setMeta('only', $only ? '1' : '0');
+		$order = self::VIEWS;
+		$i = array_search($this->view(), $order, true);
+		return $order[($i === false ? 0 : $i + 1) % count($order)];
+	}
+
+	public function setView(string $view): bool
+	{
+		if (!in_array($view, self::VIEWS, true)) {
+			return false;
+		}
+		return $this->setMeta('view', $view);
 	}
 
 	public function setMeta(string $key, string $value): bool

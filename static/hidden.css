@@ -22,41 +22,61 @@
  * CSS from the attribute alone. hidden.js injects one line per hidden
  * category into <head> (see markStyles), which is all that is needed.
  *
- * Everything in this file that does not depend on WHICH id is hidden lives
- * below; the id-specific part is generated.
+ * Three view states drive everything (html[data-hc-view]):
+ *   hidden    hidden categories are gone; stream excludes them
+ *   revealed  hidden categories are shown again and marked; stream unchanged
+ *   only      hidden categories emphasised, others dimmed; stream shows only them
  */
 
-/* a category the user hid: removed from the sidebar tree */
-html[data-hc-mode="hide"] li.tree-folder.category[data-hc-hidden="1"] {
+/* a category the user hid: removed from the sidebar tree in the 'hidden' view */
+html[data-hc-mode="hide"][data-hc-view="hidden"] li.tree-folder.category[data-hc-hidden="1"] {
 	display: none !important;
 }
 
 /* ---- stream: articles from hidden categories leave the list -----------
  * Stream items already carry data-category="<id>", so the same generated rules
  * cover them; this is the fallback for a theme that drops the attribute.
+ * The stream filter follows the VIEW, not the reveal: revealing in the sidebar
+ * must not flood the stream.
  */
-html[data-hc-mode="hide"] .flux[data-hc-hidden="1"] {
+html[data-hc-mode="hide"] .hc-stream-out {
 	display: none !important;
 }
 
-/* ---- "only hidden" view ----------------------------------------------
- * Non-hidden categories stay clickable but recede; the stream keeps only the
- * hidden ones. This is a view over the normal stream, not a server filter.
- */
-html[data-hc-only="1"] li.tree-folder.category[data-hc-hidden="0"],
-html[data-hc-only="1"] li.tree-folder.category.all,
-html[data-hc-only="1"] li.tree-folder.category.important,
-html[data-hc-only="1"] li.tree-folder.category.favorites,
-html[data-hc-only="1"] li.tree-folder.category.tags {
-	opacity: 0.38;
-	transition: opacity 0.15s ease;
-}
-html[data-hc-only="1"] li.tree-folder.category[data-hc-hidden="0"]:hover,
-html[data-hc-only="1"] li.tree-folder.category.all:hover {
+/* ---- 'revealed' view: hidden categories come back, visibly marked ----- */
+html[data-hc-view="revealed"] li.tree-folder.category[data-hc-hidden="1"] {
 	opacity: 0.75;
 }
-html[data-hc-only="1"] .flux[data-hc-hidden="0"] {
-	display: none !important;
+html[data-hc-view="revealed"] li.tree-folder.category[data-hc-hidden="1"] > .tree-folder-title::after,
+html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] > .tree-folder-title::after {
+	content: "hidden";
+	font-size: 0.62em;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	opacity: 0.7;
+	margin-left: 0.45em;
+	padding: 0 0.3em;
+	border: 1px solid currentColor;
+	border-radius: 3px;
+	vertical-align: middle;
+}
+
+/* ---- 'only' view: everything that is not hidden recedes -------------- */
+html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="0"],
+html[data-hc-view="only"] li.tree-folder.category.all,
+html[data-hc-view="only"] li.tree-folder.category.important,
+html[data-hc-view="only"] li.tree-folder.category.favorites,
+html[data-hc-view="only"] li.tree-folder.category.tags {
+	opacity: 0.32;
+	transition: opacity 0.15s ease;
+}
+html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="0"]:hover,
+html[data-hc-view="only"] li.tree-folder.category.all:hover {
+	opacity: 0.7;
+}
+html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
+	opacity: 1;
+	font-weight: 600;
 }
 
 /* the banner that says the stream is filtered, and gets you out */
@@ -84,6 +104,35 @@ html[data-hc-only="1"] .flux[data-hc-hidden="0"] {
 }
 .hc-banner button:hover {
 	background: rgba(128, 128, 128, 0.18);
+}
+
+/* ---- the one button, above the sidebar tree --------------------------- */
+.hc-bar {
+	padding: 0.35em 0.6em 0.45em;
+}
+.hc-view-btn {
+	width: 100%;
+	cursor: pointer;
+	font: inherit;
+	font-size: 0.88em;
+	padding: 0.35em 0.6em;
+	border-radius: 5px;
+	border: 1px solid rgba(128, 128, 128, 0.4);
+	background: rgba(128, 128, 128, 0.1);
+	color: inherit;
+	text-align: left;
+}
+.hc-view-btn:hover {
+	background: rgba(128, 128, 128, 0.2);
+}
+/* the state is legible without reading the label */
+.hc-view-btn[data-hc-state="revealed"] {
+	border-color: rgba(120, 175, 255, 0.65);
+}
+.hc-view-btn[data-hc-state="only"] {
+	border-color: rgba(255, 190, 90, 0.75);
+	background: rgba(255, 190, 90, 0.14);
+	font-weight: 600;
 }
 
 /* ---- the sidebar "Hidden (N)" section ---------------------------------

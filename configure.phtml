@@ -25,7 +25,23 @@ foreach ($hidden as $h) {
 $problems = $storeOk ? $store->invariantProblems() : [];
 $csrf = FreshRSS_Auth::csrfToken();
 $url = _url('extension', 'configure', 'e', urlencode($this->getName()));
-$only = $store->only();
+
+// the same three-state control as the sidebar button, so the page and the
+// button can never disagree about what "next click" means
+$view = $store->view();
+$nextView = $store->nextView();
+$viewLabels = [
+	'hidden' => ['Show hidden', 'Reveal the hidden categories in the sidebar'],
+	'revealed' => ['Show only hidden', 'Dim everything else and show only hidden categories'],
+	'only' => ['Hide them again', 'Go back to hiding them'],
+];
+$viewLabel = [
+	'hidden' => 'hidden',
+	'revealed' => 'revealed',
+	'only' => 'only hidden',
+][$view] ?? 'hidden';
+$nextViewLabel = $viewLabels[$nextView][0] ?? 'Show hidden';
+$nextViewTitle = $viewLabels[$nextView][1] ?? '';
 
 $cats = $this->categories();
 $hiddenRows = [];
@@ -111,13 +127,16 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 	</form>
 
 	<div class="hc-actions">
-		<?php if ($hiddenRows !== []) { ?>
+		<?php if ($hiddenRows !== [] ) { ?>
 			<form method="post" action="<?= $url ?>">
 				<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
-				<input type="hidden" name="act" value="only" />
-				<input type="hidden" name="on" value="<?= $only ? '0' : '1' ?>" />
-				<button class="btn" type="submit"><?= $only ? 'Stop showing only hidden' : 'View only hidden' ?></button>
+				<input type="hidden" name="act" value="view" />
+				<input type="hidden" name="to" value="<?= $nextView ?>" />
+				<button class="btn" type="submit" title="<?= htmlspecialchars($nextViewTitle, ENT_QUOTES) ?>">
+					<?= htmlspecialchars($nextViewLabel, ENT_QUOTES) ?>
+				</button>
 			</form>
+			<span class="hc-hint">Currently: <strong><?= htmlspecialchars($viewLabel, ENT_QUOTES) ?></strong></span>
 		<?php } ?>
 		<form method="post" action="<?= $url ?>">
 			<input type="hidden" name="_csrf" value="<?= $csrf ?>" />

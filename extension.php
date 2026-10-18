@@ -91,7 +91,8 @@ class HiddenCategoriesExtension extends Minz_Extension
 		$vars['hiddenCategories'] = [
 			'cats' => $cats,
 			'mode' => $this->store()->mode(),
-			'only' => $this->store()->only(),
+			'view' => $this->store()->view(),
+			'next' => $this->store()->nextView(),
 			// names+counts for the hidden ones only — a hidden category with no
 			// row in this map is named by its id, never by a guess
 			'meta' => array_filter($counts, static fn ($id) => in_array($id, $cats, true), ARRAY_FILTER_USE_KEY),
@@ -271,10 +272,36 @@ class HiddenCategoriesExtension extends Minz_Extension
 				return;
 
 			case 'only':
+				// Superseded by act=view; kept so an old bookmark or a stale
+				// page still does the right thing instead of erroring.
 				$want = Minz_Request::paramStringNull('on', true);
-				$on = $want === '1';
-				$this->store()->setOnly($on);
-				Minz_Request::good($on ? 'Showing only hidden categories.' : 'Showing everything again.', $this->selfUrl());
+				$this->store()->setView($want === '1' ? 'only' : 'hidden');
+				Minz_Request::good($want === '1' ? 'Showing only hidden categories.' : 'Showing everything again.', $this->selfUrl());
+				return;
+
+			case 'view':
+				// One button, three states. Accepts an explicit target so the
+				// button can send the state it displays; refuses anything else
+				// rather than guessing.
+				$to = Minz_Request::paramStringNull('to', true);
+				if ($to === null || trim($to) === '') {
+					$to = $this->store()->nextView();
+				}
+				$to = trim($to);
+				if (!in_array($to, HiddenCategoriesStore::VIEWS, true)) {
+					Minz_Request::bad('Unknown view "' . $to . '": nothing was changed.', $this->selfUrl());
+					return;
+				}
+				if (!$this->store()->setView($to)) {
+					Minz_Request::bad('Could not save the view: nothing was changed.', $this->selfUrl());
+					return;
+				}
+				Minz_Request::good(
+					$to === 'only' ? 'Showing only hidden categories.'
+						: ($to === 'revealed' ? 'Hidden categories shown again (still excluded from the stream).'
+							: 'Hidden categories are hidden again.'),
+					$this->selfUrl()
+				);
 				return;
 
 			case 'mode':
