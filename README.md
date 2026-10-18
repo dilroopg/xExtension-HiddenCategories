@@ -191,6 +191,28 @@ Visibility. The previous integer is recorded before every write and put back aft
 else about a feed is touched: no name, URL, category, favicon, or another extension's settings.
 Nothing is written to FreshRSS's own database or config.
 
+## How this was built
+
+Written with AI assistance — the extension was developed in a conversation, then tested against
+a live FreshRSS 1.30.1 instance with roughly 1000 feeds: enable/disable round trips, Strict writes
+and restores, the three views, and the lock all verified against the database rather than assumed.
+
+That is disclosed because you deserve to know what you're installing, not because the code is
+handed-off and unexamined. **Forking and reading the code is encouraged.** If you'd rather run a
+smaller, hand-written version of just the feature you want, the whole thing is about 2,900 lines
+across six files, and none of it is clever. The parts worth reading if you want to audit it:
+
+| file | what to look at |
+|---|---|
+| `extension.php` | `sweepFeeds()` — every write, and the restore path |
+| `store.php` | the SQLite store; the only thing that persists anything |
+| `static/hidden.js` | the views; CSS rules injected per hidden category id |
+
+The design goal was a working extension with as little code as possible: no framework, no build
+step, no dependencies, no background jobs, and no data stored outside its own SQLite file. If you
+find it doing something it shouldn't, or something that could be twenty lines instead of a
+hundred, a PR pruning it is welcome.
+
 ## Troubleshooting
 
 **Hiding does nothing on my phone.** You're in Light mode; switch to Strict.
