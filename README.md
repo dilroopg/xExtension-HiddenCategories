@@ -285,7 +285,7 @@ this extension needs.
 ## Right-click item needs another extension
 
 The right-click item depends on
-[**Right Click Actions - Feed Settings Panel**](https://github.com/printfuck/xExtension-RightClickActions)
+[**Right Click Actions**](https://github.com/printfuck/xExtension-RightClickActions)
 (`xExtension-RightClickActions`). That extension is what puts a menu on the sidebar's categories
 in the first place. This extension only adds *Hide category* and *Show category* to that menu.
 

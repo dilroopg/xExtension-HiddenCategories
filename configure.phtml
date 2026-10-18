@@ -148,10 +148,10 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 	try {
 		$enabled = FreshRSS_Context::userConf()->extensions_enabled;
 		if (is_array($enabled)) {
-			// Enabled keys are extension *names*. Right Click Actions' name varies by
-			// build/version ("Right Click Actions - Feed Settings Panel", "Right-Click
-			// Actions", "RightClickActions"), so match on the name prefix too.
-			foreach (['Right Click Actions - Feed Settings Panel', 'Right-Click Actions', 'RightClickActions'] as $rcaName) {
+			// Enabled keys are extension *names*. Right Click Actions has shipped
+			// under several names ("Right Click Actions", "Right-Click Actions",
+			// "RightClickActions"), so match on the name prefix too.
+			foreach (['Right Click Actions', 'Right-Click Actions', 'RightClickActions'] as $rcaName) {
 				if (!empty($enabled[$rcaName])) { $rcaInstalled = true; break; }
 			}
 			if (!$rcaInstalled) {
@@ -174,13 +174,13 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 		</p>
 		<p class="hc-hint">
 			<?php if ($rcaInstalled) { ?>
-				<strong>Right Click Actions - Feed Settings Panel is installed.</strong> Right-clicking a
+				<strong>Right Click Actions is installed.</strong> Right-clicking a
 				category in the sidebar shows <em>Hide category</em> / <em>Unhide category</em>.
 			<?php } else { ?>
-				<strong>Needs the Right Click Actions - Feed Settings Panel extension.</strong> This
+				<strong>Needs the Right Click Actions extension.</strong> This
 				extension adds a <em>Hide category</em> / <em>Unhide category</em> item to the sidebar's
 				right-click menu — but that menu belongs to
-				<a href="https://github.com/printfuck/xExtension-RightClickActions" target="_blank" rel="noopener">Right Click Actions - Feed Settings Panel</a>,
+				<a href="https://github.com/printfuck/xExtension-RightClickActions" target="_blank" rel="noopener">Right Click Actions</a>,
 				not to this extension. <strong>Without it installed FreshRSS has no right-click
 				menu at all</strong>, so there is nothing to add the item to. Every other way of
 				hiding — <em>Hide</em> on each row above, the button under <em>Subscription
