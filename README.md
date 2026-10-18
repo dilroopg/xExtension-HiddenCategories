@@ -23,11 +23,17 @@ Hide a category from wherever you already are:
 Once something is hidden, one button above the sidebar cycles three views. The eye *is* the
 button; its icon tells you which view you're in. It is green. The lock button beside it is red.
 
-| eye | view | what you see | what happens to your feeds |
-|---|---|---|---|
-| closed (dim green) | **hidden** | hidden categories are gone from the sidebar and the stream | hiding applied |
-| peeking (green) | **revealed** | hidden categories are mixed back in with everything else, tagged `HIDDEN` | hiding temporarily lifted |
-| open (green) | **only** | the stream shows only the hidden categories | hiding temporarily lifted |
+| eye | view | sidebar | stream | what happens to your feeds |
+|---|---|---|---|---|
+| closed (dim green) | **hidden** | hidden categories are gone | hidden categories' articles are gone | hiding applied |
+| peeking (green) | **revealed** | everything, hidden ones tagged `HIDDEN` | hidden articles mixed in with the rest | hiding temporarily lifted |
+| open (green) | **only** | everything stays listed, but the non-hidden rows fade back | **only** hidden categories' articles — every normally-visible (non-hidden) category is hidden from the stream | hiding temporarily lifted |
+
+The stream column matters for `only`: it does not just narrow the list, it **removes everything
+that is not hidden**. A category you have not hidden has no articles in the stream in that view
+— the filter keeps the hidden ones and drops the rest, in both Light and Strict. In the sidebar
+those rows are only dimmed, not removed, so you can still click through to a visible category
+while you're there.
 
 Clicking again from `only` returns you to `hidden`, which re-applies the hiding.
 
