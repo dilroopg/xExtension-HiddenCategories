@@ -31,16 +31,16 @@ $url = _url('extension', 'configure', 'e', urlencode($this->getName()));
 $view = $store->view();
 $nextView = $store->nextView();
 $viewLabels = [
-	'hidden' => ['Show hidden', 'Reveal the hidden categories in the sidebar'],
-	'revealed' => ['Show only hidden', 'Dim everything else and show only hidden categories'],
-	'only' => ['Hide them again', 'Go back to hiding them'],
+	'hidden' => ['Show', 'Reveal the hidden categories in the sidebar'],
+	'revealed' => ['All', 'Show only the hidden categories, hide the rest'],
+	'only' => ['Hide', 'Go back to hiding them'],
 ];
 $viewLabel = [
 	'hidden' => 'hidden',
 	'revealed' => 'revealed',
 	'only' => 'only hidden',
 ][$view] ?? 'hidden';
-$nextViewLabel = $viewLabels[$nextView][0] ?? 'Show hidden';
+$nextViewLabel = $viewLabels[$nextView][0] ?? 'Show';
 $nextViewTitle = $viewLabels[$nextView][1] ?? '';
 
 // the lock card: passcode shown in plain text by design (it is the owner's own
