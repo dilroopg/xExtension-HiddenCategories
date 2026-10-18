@@ -91,8 +91,15 @@ class HiddenCategoriesExtension extends Minz_Extension
 		$vars['hiddenCategories'] = [
 			'cats' => $cats,
 			'mode' => $this->store()->mode(),
-			'view' => $this->store()->view(),
-			'next' => $this->store()->nextView(),
+			// the LOCK overrides the eye: a locked instance always reports the
+			// hidden view, so nothing on the page can reveal what is hidden
+			'view' => $this->effectiveView(),
+			'next' => $this->sessionUnlocked() ? $this->store()->nextView() : 'hidden',
+			'locked' => $this->store()->isLocked() && !$this->sessionUnlocked(),
+			'lockedArmed' => $this->store()->isLocked(),
+			// the lock button is only offered when a passcode exists, so it can
+			// never lead to a dead end
+			'lockAvailable' => $this->store()->hasPasscode(),
 			// names+counts for the hidden ones only — a hidden category with no
 			// row in this map is named by its id, never by a guess
 			'meta' => array_filter($counts, static fn ($id) => in_array($id, $cats, true), ARRAY_FILTER_USE_KEY),
@@ -170,6 +177,34 @@ class HiddenCategoriesExtension extends Minz_Extension
 		}
 		$this->store()->checkpoint('disabled');
 		return true;
+	}
+
+	/**
+	 * Is the current browser session unlocked?
+	 *
+	 * The unlock is remembered in the PHP session, not the database, so it is
+	 * per browser and gone at logout/session end — the "remember for session"
+	 * the lock was asked for. A session unlocked BEFORE the current lock was
+	 * armed does not count: the stored lock stamp must be older than the
+	 * unlock, which is what keeps one open tab from leaving another unlocked.
+	 */
+	public function sessionUnlocked(): bool
+	{
+		if (!$this->store()->isLocked()) {
+			return true;
+		}
+		$unlocked = Minz_Session::paramString('hc_unlocked_at');
+		if ($unlocked === '') {
+			return false;
+		}
+		$lockedAt = $this->store()->getMeta('locked_at', '');
+		return $lockedAt === '' || $unlocked >= $lockedAt;
+	}
+
+	/** The view that actually applies: lock overrides the eye entirely. */
+	public function effectiveView(): string
+	{
+		return $this->sessionUnlocked() ? $this->store()->view() : 'hidden';
 	}
 
 	/** Lazily built store, rooted in this user's own extension data directory. */
@@ -283,7 +318,75 @@ class HiddenCategoriesExtension extends Minz_Extension
 				Minz_Request::good($want === '1' ? 'Showing only hidden categories.' : 'Showing everything again.', $this->selfUrl());
 				return;
 
+			case 'lock':
+				// Locking must NOT change meta.view: the lock sits on top of the
+				// eye, so unlocking returns you to whatever the eye was set to.
+				// The "always hidden while locked" behaviour comes from the
+				// server forcing the payload's view, not from rewriting it.
+				$r = $this->store()->lock();
+				if ($r['ok']) {
+					Minz_Session::_param('hc_unlocked_at', '');
+					Minz_Request::good($r['message'], $this->selfUrl());
+				} else {
+					Minz_Request::bad($r['message'], $this->selfUrl());
+				}
+				return;
+
+			case 'unlock':
+				$code = Minz_Request::paramStringNull('code', true);
+				$r = $this->store()->unlock(is_string($code) ? $code : null);
+				// Return to the page the form was filled in on, so a wrong code
+				// does not dump the user into the settings page. Only an internal
+				// /i/ path is honoured — never an absolute URL, and never "//host".
+				$back = Minz_Request::paramStringNull('back', true);
+				$isSafeBack = is_string($back) && preg_match('~^/i/[\w\-./?=&%]*$~', $back) === 1
+					&& strpos($back, '//') === false;
+				// Minz_Request::good()/bad() take a PARAMS ARRAY, not a URL string
+				// (a string throws TypeError and surfaces as a bare HTTP 500).
+				// Fold the query back into ['c'=>…, 'a'=>…, '<param>'=>…].
+				$dest = $this->selfUrl();
+				if ($isSafeBack) {
+					$qs = (string)parse_url($back, PHP_URL_QUERY);
+					parse_str($qs, $parsed);
+					$dest = [
+						'c' => isset($parsed['c']) && is_string($parsed['c']) ? $parsed['c'] : 'index',
+						'a' => isset($parsed['a']) && is_string($parsed['a']) ? $parsed['a'] : 'index',
+					];
+					foreach ($parsed as $k => $v) {
+						if ($k === 'c' || $k === 'a' || !is_string($v)) {
+							continue;
+						}
+						$dest[$k] = $v;
+					}
+				}
+				if ($r['ok']) {
+					// remember for THIS session only; the DB stays locked=0
+					Minz_Session::_param('hc_unlocked_at', date('c'));
+					Minz_Request::good($r['message'], $dest);
+				} else {
+					Minz_Request::bad($r['message'], $dest);
+				}
+				return;
+
+			case 'passcode':
+				// Always allowed, locked or not: the settings page is the escape
+				// hatch and must never need the code you may have forgotten.
+				$code = Minz_Request::paramStringNull('passcode', true);
+				$r = $this->store()->setPasscode(is_string($code) ? $code : '');
+				if ($r['ok']) {
+					Minz_Request::good($r['message'], $this->selfUrl());
+				} else {
+					Minz_Request::bad($r['message'], $this->selfUrl());
+				}
+				return;
+
 			case 'view':
+				// A hand-crafted view change while locked must not work, or the
+				// lock could be bypassed from another tab.
+				if (!$this->sessionUnlocked()) {
+					Minz_Request::bad('Locked: unlock first.', $this->selfUrl());
+					return;
+				}
 				// One button, three states. Accepts an explicit target so the
 				// button can send the state it displays; refuses anything else
 				// rather than guessing.

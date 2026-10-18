@@ -173,6 +173,84 @@ final class HiddenCategoriesStore
 		$this->setMetaIfAbsent('schema', (string)self::SCHEMA);
 		$this->setMetaIfAbsent('mode', 'light');
 		$this->setMetaIfAbsent('view', 'hidden');
+		$this->setMetaIfAbsent('locked', '0');
+	}
+
+	// ---------------------------------------------------------------- lock
+	//
+	// A speed bump, not authentication. The passcode is stored in PLAIN TEXT on
+	// purpose: it is shown in the extension settings by design, so hashing it
+	// would only stop the owner reading their own code. Nothing here encrypts
+	// data, and nothing claims to.
+
+	/** The passcode exactly as typed. Empty means the lock is disabled. */
+	public function passcode(): string
+	{
+		return $this->getMeta('passcode', '');
+	}
+
+	/** Is a passcode set at all? An empty code can never lock. */
+	public function hasPasscode(): bool
+	{
+		return $this->passcode() !== '';
+	}
+
+	/** Is the extension armed? False whenever no passcode exists. */
+	public function isLocked(): bool
+	{
+		return $this->hasPasscode() && $this->getMeta('locked', '0') === '1';
+	}
+
+	/**
+	 * @return array{ok:bool,message:string}
+	 */
+	public function setPasscode(string $code): array
+	{
+		$code = trim($code);
+		if ($code === '') {
+			// clearing the code disables the lock, and must not leave the
+			// instance armed with no way back in
+			$this->setMeta('passcode', '');
+			$this->setMeta('locked', '0');
+			return ['ok' => true, 'message' => 'Passcode cleared — the lock is now disabled.'];
+		}
+		if (!$this->setMeta('passcode', $code)) {
+			return ['ok' => false, 'message' => 'Could not save the passcode.'];
+		}
+		return ['ok' => true, 'message' => 'Passcode saved.'];
+	}
+
+	/**
+	 * @return array{ok:bool,message:string}
+	 */
+	public function lock(): array
+	{
+		if (!$this->hasPasscode()) {
+			return ['ok' => false, 'message' => 'Set a passcode first — there is nothing to lock with.'];
+		}
+		$this->setMeta('locked', '1');
+		// stamp the moment so a session unlocked before now cannot count as
+		// unlocked for THIS lock
+		$this->setMeta('locked_at', date('c'));
+		return ['ok' => true, 'message' => 'Locked. Hidden categories are hidden until you unlock.'];
+	}
+
+	/**
+	 * @return array{ok:bool,message:string}
+	 */
+	public function unlock(?string $given): array
+	{
+		if (!$this->isLocked()) {
+			return ['ok' => true, 'message' => 'Already unlocked.'];
+		}
+		// hash_equals avoids a length oracle in the comparison. It is not
+		// "security" — the code is displayed in plain text on the settings
+		// page — it is just the correct way to compare two strings.
+		if (!is_string($given) || !hash_equals($this->passcode(), $given)) {
+			return ['ok' => false, 'message' => 'Wrong passcode.'];
+		}
+		$this->setMeta('locked', '0');
+		return ['ok' => true, 'message' => 'Unlocked for this session.'];
 	}
 
 	// ---------------------------------------------------------------- meta

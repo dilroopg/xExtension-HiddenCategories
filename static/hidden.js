@@ -61,6 +61,9 @@
 	var meta = HC.meta && typeof HC.meta === 'object' ? HC.meta : {};
 	var view = HC.view === 'revealed' || HC.view === 'only' ? HC.view : 'hidden';
 	var next = HC.next || 'hidden';
+	// locked here means "armed AND this session has not unlocked" — the server
+	// decides that, so the page cannot disagree with it
+	var locked = !!HC.locked;
 	var isHidden = {};
 	for (var i = 0; i < cats.length; i++) {
 		isHidden[cats[i]] = true;
@@ -156,10 +159,27 @@
 	// Every control funnels through here, and every one of them hits the same
 	// server action. One write path means the sidebar, the menu and the settings
 	// page cannot drift apart.
+	/**
+	 * Where to send the user back to after unlocking. Only our own index paths
+	 * are accepted by the server, so this cannot become an open redirect.
+	 */
+	function backUrl() {
+		try {
+			var u = new URL(window.location.href);
+			return u.pathname + u.search;
+		} catch (e) {
+			return '/i/';
+		}
+	}
+
+	function csrfToken() {
+		var el = document.querySelector('input[name="_csrf"]');
+		return (window.context && window.context.csrf) || (el ? el.value : '');
+	}
+
 	function post(extra, done) {
 		if (!HC.api) { return; }
-		var csrfEl = document.querySelector('input[name="_csrf"]');
-		var csrf = (window.context && window.context.csrf) || (csrfEl ? csrfEl.value : '');
+		var csrf = csrfToken();
 		var body = new URLSearchParams();
 		body.append('_csrf', csrf);
 		Object.keys(extra).forEach(function (k) { body.append(k, extra[k]); });
@@ -231,6 +251,11 @@
 			+ '<circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg>'
 	};
 
+	var LOCK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"'
+		+ ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+		+ '<rect x="4.5" y="10.5" width="15" height="10" rx="2"/>'
+		+ '<path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>';
+
 	var LABELS = {
 		// label names what the NEXT click does; the icon shows the CURRENT state
 		hidden: { text: 'Show hidden', title: 'Hidden categories are hidden \u2014 click to reveal them' },
@@ -248,26 +273,80 @@
 			bar.className = 'hc-bar';
 			// sits directly above the tree, so it is the first thing in reach
 			tree.parentNode.insertBefore(bar, tree);
-
-			var btn = document.createElement('button');
-			btn.type = 'button';
-			btn.id = 'hc-view-btn';
-			btn.className = 'hc-view-btn';
-			btn.setAttribute('data-hc-state', 'hidden');
-			btn.addEventListener('click', function (ev) {
-				ev.preventDefault();
-				post({ act: 'view', to: next });
-			});
-			bar.appendChild(btn);
+			var wrap = document.createElement('div');
+			wrap.className = 'hc-bar-row';
+			bar.appendChild(wrap);
 		}
-		var b = document.getElementById('hc-view-btn');
-		if (!b) { return; }
-		// with nothing hidden the button has nothing to reveal
-		if (cats.length === 0) {
+		var btnWrap = bar.querySelector('.hc-bar-row');
+		if (!btnWrap) { return; }
+		// The bar stays visible if there is ANYTHING to act on: hidden things to
+		// reveal, or a passcode (so you can lock before hiding anything). Hiding
+		// it when nothing is hidden made the lock unreachable, which is exactly
+		// the case "hit lock with nothing hidden" is about.
+		var anythingToDo = cats.length > 0 || !!HC.lockAvailable || locked;
+		if (!anythingToDo) {
 			bar.style.display = 'none';
 			return;
 		}
 		bar.style.display = '';
+
+		// The eye button is created INSIDE the unlocked branch below, because the
+		// locked branch replaces the whole row with a form. Looking it up here
+		// (as this code used to) returned null whenever the previous render had
+		// been the locked one, and the function bailed out before drawing the
+		// unlock form — the lock rendered as an empty row on every reload.
+
+		// ---- locked: the eye is replaced in place by the unlock form --------
+		if (locked) {
+			btnWrap.innerHTML = '';
+			var form = document.createElement('form');
+			form.className = 'hc-unlock';
+			form.method = 'post';
+			form.action = HC.api || '';
+			form.innerHTML = '<span class="hc-ico hc-lock-ico">' + LOCK_ICON + '</span>'
+				+ '<input type="hidden" name="_csrf" value="' + csrfToken() + '" />'
+				+ '<input type="hidden" name="act" value="unlock" />'
+				+ '<input type="hidden" name="back" value="' + backUrl() + '" />'
+				+ '<input type="password" name="code" class="hc-code" autocomplete="off"'
+				+ ' placeholder="passcode" aria-label="Passcode" />'
+				+ '<button type="submit" class="hc-unlock-btn">Unlock</button>';
+			form.addEventListener('submit', function (ev) {
+				var f = form.querySelector('.hc-code');
+				if (!f || f.value === '') { ev.preventDefault(); return; }
+			});
+			btnWrap.appendChild(form);
+			var fld = form.querySelector('.hc-code');
+			if (fld) { try { fld.focus(); } catch (e) {} }
+			return;
+		}
+
+		// ---- unlocked: eye + lock button -----------------------------------
+		btnWrap.innerHTML = '';
+		var b = document.createElement('button');
+		b.type = 'button';
+		b.id = 'hc-view-btn';
+		b.className = 'hc-view-btn';
+		b.addEventListener('click', function (ev) {
+			ev.preventDefault();
+			post({ act: 'view', to: next });
+		});
+		if (cats.length === 0) {
+			// nothing hidden yet: the eye would be a no-op, so only the lock is
+			// offered (it hides whatever is in the hidden set, which is nothing)
+			if (HC.lockAvailable) {
+				var lk0 = document.createElement('button');
+				lk0.type = 'button';
+				lk0.className = 'hc-lock-btn hc-lock-btn-wide';
+				lk0.title = 'Lock hidden categories (nothing is hidden yet)';
+				lk0.innerHTML = LOCK_ICON + '<span class="hc-txt">Lock</span>';
+				lk0.addEventListener('click', function (ev) {
+					ev.preventDefault();
+					post({ act: 'lock' });
+				});
+				btnWrap.appendChild(lk0);
+			}
+			return;
+		}
 		var l = LABELS[view] || LABELS.hidden;
 		// icon = current state, label = next action; kept in two spans so the
 		// icon never has to be re-parsed on every render
@@ -276,6 +355,23 @@
 		b.title = l.title;
 		b.setAttribute('data-hc-state', view);
 		b.setAttribute('aria-label', l.text + ' \u2014 ' + l.title);
+		btnWrap.appendChild(b);
+
+		// only offer the lock when a passcode exists, so the button can never
+		// lead to a dead end
+		if (HC.lockAvailable) {
+			var lk = document.createElement('button');
+			lk.type = 'button';
+			lk.className = 'hc-lock-btn';
+			lk.title = 'Lock: hide everything and require the passcode';
+			lk.setAttribute('aria-label', 'Lock hidden categories');
+			lk.innerHTML = LOCK_ICON;
+			lk.addEventListener('click', function (ev) {
+				ev.preventDefault();
+				post({ act: 'lock' });
+			});
+			btnWrap.appendChild(lk);
+		}
 	}
 
 	// ---- 6. the sidebar "Hidden (N)" section ------------------------------
@@ -284,6 +380,9 @@
 	// thing. Rendered in every view, because "reveal" should not cost a page.
 	function buildHiddenSection() {
 		if (cats.length === 0) { return; }
+		// while locked the list is the thing being protected, so it is not
+		// rendered at all — not merely collapsed
+		if (locked) { return; }
 		var tree = document.querySelector('nav#sidebar .tree') || document.querySelector('.tree');
 		if (!tree) { return; }
 		if (document.getElementById('hc-hidden-tree')) { return; }
@@ -359,7 +458,7 @@
 
 	// ---- 7a. the banner: says the stream is filtered, one click out -------
 	function buildBanner() {
-		if (view !== 'only') { return; }
+		if (locked || view !== 'only') { return; }
 		var stream = document.getElementById('stream');
 		if (!stream || !stream.parentNode) { return; }
 		if (document.getElementById('hc-banner')) { return; }

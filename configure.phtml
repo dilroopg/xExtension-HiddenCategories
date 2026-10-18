@@ -43,6 +43,11 @@ $viewLabel = [
 $nextViewLabel = $viewLabels[$nextView][0] ?? 'Show hidden';
 $nextViewTitle = $viewLabels[$nextView][1] ?? '';
 
+// the lock card: passcode shown in plain text by design (it is the owner's own
+// code and the page is the escape hatch when it is forgotten)
+$passcode = $store->passcode();
+$locked = $store->isLocked();
+
 $cats = $this->categories();
 $hiddenRows = [];
 $visibleRows = [];
@@ -143,6 +148,44 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 			<input type="hidden" name="act" value="restore" />
 			<button class="btn" type="submit" title="Put back anything this extension changed. Safe to press any number of times.">Restore everything now</button>
 		</form>
+	</div>
+
+	<div class="hc-group-label">Lock</div>
+	<div class="hc-lock-card">
+		<p class="hc-hint">
+			A speed bump, not security: it stops someone clicking the eye and seeing what
+			you hid. It does not hide anything from <em>Subscription management</em>, which
+			always lists every feed.
+		</p>
+
+		<form method="post" action="<?= $url ?>" class="hc-lock-form">
+			<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
+			<input type="hidden" name="act" value="passcode" />
+			<label for="hc-passcode">Passcode</label>
+			<input type="text" id="hc-passcode" name="passcode" class="hc-passcode"
+				value="<?= htmlspecialchars($passcode, ENT_QUOTES) ?>"
+				placeholder="leave empty to disable the lock" autocomplete="off" />
+			<button class="btn" type="submit">Save passcode</button>
+			<span class="hc-hint">Shown as plain text on purpose — you can always read or
+				change it here, even while locked.</span>
+		</form>
+
+		<div class="hc-lock-row">
+			<span>Status: <strong><?= $locked ? 'locked' : ($passcode !== '' ? 'unlocked' : 'no passcode set') ?></strong></span>
+			<form method="post" action="<?= $url ?>">
+				<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
+				<input type="hidden" name="act" value="lock" />
+				<button class="btn" type="submit" <?= ($passcode === '' || $locked) ? 'disabled="disabled"' : '' ?>>Lock now</button>
+			</form>
+			<form method="post" action="<?= $url ?>">
+				<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
+				<input type="hidden" name="act" value="unlock" />
+				<input type="hidden" name="code" value="<?= htmlspecialchars($passcode, ENT_QUOTES) ?>" />
+				<button class="btn" type="submit" <?= $locked ? '' : 'disabled="disabled"' ?>>Unlock now</button>
+			</form>
+			<span class="hc-hint">Unlock from here never asks for the code — this page is the
+				way back in if you forget it.</span>
+		</div>
 	</div>
 
 	<details class="hc-details">
