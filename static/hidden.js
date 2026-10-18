@@ -264,8 +264,8 @@
 		// label names what the NEXT click does; the icon shows the CURRENT state
 		// label and tooltip both name the state you are IN, not where the click goes
 		hidden: { text: 'Hidden', title: 'Hidden categories are hidden from the sidebar and stream' },
-		revealed: { text: 'All shown', title: 'Everything is showing again \u2014 hidden categories are marked' },
-		only: { text: 'Only hidden', title: 'Only hidden categories are showing' }
+		revealed: { text: 'Shown', title: 'Everything is showing again \u2014 hidden categories are marked' },
+		only: { text: 'Just hidden', title: 'Only hidden categories are showing' }
 	};
 
 	function buildButton() {
