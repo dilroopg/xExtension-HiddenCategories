@@ -3,55 +3,79 @@
 A FreshRSS extension that hides categories you're not in the mood for — and brings them
 back in one click.
 
-Nothing is deleted, renamed or moved. Your feeds are not modified.
+Nothing is deleted, renamed or moved. In the default (Light) mode nothing is written to your
+feeds at all. In Strict mode the only thing changed is FreshRSS's own per-feed Visibility
+setting, which is recorded first so it can be put back exactly.
 
 ## What it does
 
 Hide a category from wherever you already are:
 
-- **Right-click** a category in the sidebar — *Hide category*. (Needs the
-  [Right-Click Actions](https://github.com/printfucks/xExtension-RightClickActions)
-  extension installed. Without it there's no right-click menu anywhere on the page, so
-  nothing is missing — everything else still works.)
+- **Right-click** a category in the sidebar — *Hide category*. Needs the
+  [RightClickActions](https://github.com/printfuck/xExtension-RightClickActions) extension
+  installed. Without it there is simply no right-click menu, here or anywhere else in
+  FreshRSS, so nothing is missing — every other way of hiding still works.
 - **Subscription management** — a `Hide` button on each category box.
 - **Extension settings** — a list of every category with `Hide` / `Show`.
 
-Once something is hidden, one button above the sidebar cycles three states:
+## The eye button
 
-| icon | state | what you see |
-|---|---|---|
-| closed eye | **hidden** | hidden categories are gone from the sidebar and the stream |
-| peeking eye | **revealed** | the hidden ones are back in the sidebar, marked `hidden` |
-| open eye | **only** | everything else dimmed, the stream shows only the hidden ones |
+Once something is hidden, one button above the sidebar cycles three views. The eye *is* the
+button; its icon tells you which view you're in. It is green. The lock button beside it is red.
 
-A `Hidden (N)` row in the sidebar lists what's hidden, so unhiding never means hunting.
+| eye | view | what you see | what happens to your feeds |
+|---|---|---|---|
+| closed (dim green) | **hidden** | hidden categories are gone from the sidebar and the stream | hiding applied |
+| peeking (green) | **revealed** | hidden categories are mixed back in with everything else, tagged `HIDDEN` | hiding temporarily lifted |
+| open (green) | **only** | the stream shows only the hidden categories | hiding temporarily lifted |
 
-## Optional passcode
+Clicking again from `only` returns you to `hidden`, which re-applies the hiding.
 
-For when someone else uses your machine. Set a passcode in the extension settings and a
-small lock button appears next to the eye.
+A row at the bottom of the sidebar shows **just the number** of hidden categories — not the
+word "hidden". That is deliberate: someone glancing at your screen shouldn't be told there is
+anything hidden to find. The full wording lives in the row's tooltip. Click the row to open
+the list.
 
-- **Locked** → the eye is replaced by a passcode field. Hidden categories stay hidden until
-  unlocked, and the `Hidden (N)` row disappears entirely.
-- **Unlock** is remembered for your session (per browser, gone at logout), so you unlock
-  once rather than on every page.
+## Optional passcode — read this before using it
+
+The passcode is a **speed bump, not security**. It exists for one situation: you have hidden
+categories, someone walks up to your unlocked computer, and you don't want them clicking the
+eye and seeing what you hid.
+
+**It is deliberately weak, and that is a design choice rather than an oversight:**
+
+- **Stored in plain text.** Not hashed, not encrypted. Anyone who can read the SQLite file can
+  read the passcode directly.
+- **Displayed in plain text** in the extension settings, so you can always see what it is.
+- **You can change or remove it without knowing the current one.** Settings → the lock card.
+  You cannot lock yourself out.
+- **No attempt limit, no lockout, no cooldown, no timeout.** Nothing slows down repeated
+  guessing.
+- **It guards only this extension's own controls** — the eye button and the count row. It does
+  not touch FreshRSS login, and it does not hide anything from *Subscription management*, a
+  stock FreshRSS page that always lists every feed.
+- **Unlock lasts for the session** — per browser, cleared at logout. Locking again is one
+  click.
+
+What it actually does:
+
+- **Locked** → the eye is replaced by a passcode field, and the count row disappears.
 - **Locking does not change which view you were in.** Unlock and you're back where you left.
-- The passcode is shown in plain text in the extension settings, and you can lock, unlock
-  or change it there **without knowing it** — you cannot lock yourself out.
-- Clear the field to disable the lock.
+- **Locking writes nothing to your feeds.** The hiding stays applied the whole time; locking
+  and unlocking involve no writes at all.
+- **Clear the passcode field** to disable the lock entirely.
 
-This is a speed bump against a passer-by clicking the eye. It is **not** security: it
-encrypts nothing, and it does not hide feeds from *Subscription management*, which is a
-normal FreshRSS page that always lists every feed.
+If you want real protection, use FreshRSS's own authentication. This is a curtain, not a door.
 
 ## Two modes
 
-**Light** (default) — nothing is written. Hidden categories and their articles are filtered
-in your browser only. Your phone, your reader app and the API still show everything.
+**Light** (default) — nothing is written anywhere. Hidden categories and their articles are
+filtered in your browser only. Your phone, your reader app and the API still show everything.
+Every view above works, using only what the page already loaded.
 
 **Strict** — hiding becomes real everywhere. Feeds in a hidden category get FreshRSS's own
 Visibility setting *Do not show*, so they leave the main stream in every client, including
-phone apps and reader apps. The previous value is saved for each feed and restored when you
+phone apps and reader apps. The previous value is recorded for each feed and restored when you
 unhide, switch back to Light, or disable the extension.
 
 | | Light | Strict |
@@ -59,63 +83,52 @@ unhide, switch back to Light, or disable the extension.
 | browser | filtered | filtered |
 | phone / reader app | sees everything | **hidden** |
 | category page | shows the hidden category | **empty until unhidden** |
-| writes to your feeds | none | Visibility per feed, restorable |
-| cost of hiding a big category | instant | ~1.5 s per 188 feeds |
+| writes to your feeds | none | Visibility per feed, recorded and restorable |
+| cost of hiding a category | instant | ~1.5 s per 188 feeds, ~3 s per 864 |
 
-Hiding in Strict does **not** stop fetching: entries keep arriving and still count as
-unread. Unhiding brings the whole backlog back.
-
-## Three views, one button
-
-Clicking the eye in the sidebar cycles:
-
-| eye | what you see | what happens to your feeds |
-|---|---|---|
-| closed | hidden categories gone | enforcement applied |
-| peeking | hidden ones **mixed back in** with everything else, tagged `HIDDEN` | **enforcement suspended** |
-| open | **only** hidden categories | **enforcement suspended** |
-
-Closing the eye re-applies the hiding.
+Hiding does **not** stop fetching. Entries keep arriving and still count as unread. Unhiding
+brings the whole backlog back.
 
 ## What it costs
 
-Hiding is not free in Strict, and peeking is not free in any mode where Strict is on.
+Hiding is not free in Strict, and peeking is not free when Strict is on.
 
 - **Hiding or unhiding a category in Strict** writes FreshRSS's Visibility setting for every
   feed in it. Measured: **188 feeds in ~1.4 s**, **864 feeds in ~3 s**. It is a burst at the
   moment you click, not a per-page cost — page loads stay at their normal speed.
-- **Peeking and only-hidden are the expensive views**, not the cheap ones. At *Do not show*
-  the server never sends those articles, so the only way to show them is to lift the setting
-  for every feed first: **~2.6–3 s each way** for 864 feeds.
+- **Peeking and only-hidden are the expensive views**, not the cheap ones. In Strict a hidden
+  feed sits at *Do not show*, where the server never sends its articles at all — so the only
+  way to show them is to lift that setting for every feed first. Measured **~2.6–3 s each way**
+  for 864 feeds. In Light these views are instant, because nothing was ever suppressed.
 - **While peeking or in only-hidden, your feeds are genuinely visible to every synced
-  client**, phone included. Those views work by turning the hiding off temporarily, so
-  anything syncing during that window sees them. Closing the eye hides them again.
+  client, phone included.** Those views work by temporarily turning the hiding off, so
+  anything that syncs during that window sees them. Closing the eye hides them again.
 - **Hidden feeds keep being fetched.** Hiding changes what is displayed, never what is
-  downloaded. Unread counts can climb for categories you cannot see, and unhiding brings the
-  whole backlog back.
-- **Nothing runs in the background.** No cron, no external service, no network calls. Cost
+  downloaded. Unread counts can climb for categories you cannot see.
+- **Nothing runs in the background.** No cron job, no external service, no network calls. Cost
   happens when you click, and nowhere else.
 
 ## What it writes
 
-In **Light** (the default): nothing. Everything it stores lives in its own SQLite file
-under `data/users/<user>/extensions/HiddenCategories/`.
+In **Light**: nothing. Everything it stores lives in its own SQLite file under
+`data/users/<user>/extensions/HiddenCategories/`.
 
 In **Strict**: one column on the feeds of hidden categories — `priority`, FreshRSS's own
 per-feed Visibility. The previous integer is recorded before every write and put back
-afterwards. Nothing else about a feed is touched: no name, URL, category, favicon or another
+afterwards. Nothing else about a feed is touched: no name, URL, category, favicon, or another
 extension's settings.
 
 ## Turning it off
 
-Switching it off runs the extension's own restore first, then disables it: any feed value it
-changed goes back to what it was before (Strict), and the page returns to stock FreshRSS
-(always true in Light). If the restore cannot complete, the disable is refused and the
-extension stays enabled with its settings page available — so you cannot end up with feeds
-left hidden and no way to reach the control.
+Switching it off runs the extension's own restore first, then disables it: any feed setting it
+changed goes back to what it was before (Strict), and the page returns to stock FreshRSS (which
+was always true in Light). If the restore cannot complete, the disable is **refused** and the
+extension stays enabled with its settings page available — so you cannot end up with feeds left
+hidden and no way to reach the control.
 
-Your settings (view, hidden set, mode, passcode) stay in the extension's own database and
-come back when you re-enable. Re-enabling in Strict re-applies the hiding automatically.
+Your settings (view, hidden set, mode, passcode) stay in the extension's own database and come
+back when you re-enable. Re-enabling in Strict re-applies the hiding automatically, so the
+extension never comes back claiming to hide things that are actually visible.
 
 ## Requirements
 
@@ -124,9 +137,8 @@ exist in earlier releases; on 1.27 and below it will not work. Nothing else is n
 extensions beyond what FreshRSS already requires (SQLite support, bundled with stock PHP), no
 build step, no network access, no other extension. Tested on FreshRSS 1.30.1, PHP 8.4.
 
-It also integrates with
-[RightClickActions](https://github.com/printfuck/xExtension-RightClickActions) if that is
-installed (right-click a category to hide it) and behaves normally without it.
+RightClickActions is optional: if installed you get right-click-to-hide, if not everything
+else works unchanged.
 
 ## Install
 
@@ -139,8 +151,8 @@ The directory must be named `xExtension-HiddenCategories` (FreshRSS resolves the
 directory name). Then: *Settings → Extensions → Hidden Categories → enable*.
 
 The web-server user needs to be able to write
-`data/users/<user>/extensions/HiddenCategories/` — the extension creates it itself and says
-so on its settings page if it can't.
+`data/users/<user>/extensions/HiddenCategories/` — the extension creates it itself and says so
+on its settings page if it can't.
 
 ## Data it stores
 
@@ -148,9 +160,9 @@ Only in `data/users/<user>/extensions/HiddenCategories/state.sqlite`:
 
 | table | holds |
 |---|---|
-| `meta` | schema version, current view, passcode, lock state, timestamps |
+| `meta` | schema version, current view, mode, passcode (plain text), lock state, timestamps |
 | `hidden_cat` | which categories are hidden |
-| `feed_snap` | per-feed snapshots taken before a write (Strict mode only — unused so far) |
+| `feed_snap` | per-feed Visibility values recorded before a Strict write, so they can be restored |
 
 Nothing is stored in FreshRSS's own database or config. Deleting the extension directory
 leaves that file alone; delete the file itself to forget everything.
