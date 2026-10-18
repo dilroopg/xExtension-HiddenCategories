@@ -263,7 +263,7 @@
 	var LABELS = {
 		// label names what the NEXT click does; the icon shows the CURRENT state
 		hidden: { text: 'Show', title: 'Hidden categories are hidden \u2014 click to reveal them' },
-		revealed: { text: 'All', title: 'Peeking: hidden categories are mixed back in \u2014 click to see only those' },
+		revealed: { text: 'Show all', title: 'Peeking: hidden categories are mixed back in \u2014 click to see only those' },
 		only: { text: 'Hide', title: 'You are seeing only hidden categories \u2014 click to hide them again' }
 	};
 

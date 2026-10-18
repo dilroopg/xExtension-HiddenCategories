@@ -215,10 +215,11 @@ file itself to forget everything.
 
 ## Changelog
 
-**1.5.1** — the view button says *Show* / *All* / *Hide*.
+**1.5.2** — the view button says *Show* / *Show all* / *Hide*.
 
-The three labels named the states at length ("Show only hidden", "Hide them again"). They are now
-one word each, in the sidebar button, the settings page and the banner that appears while only
+The three labels named each state at length ("Show hidden", "Show only hidden", "Hide them again").
+They are now one or two words each — *Show all* rather than a bare *All*, so the label says what
+the click does — in the sidebar button, the settings page, and the banner that appears while only
 hidden categories are showing. Nothing about the views themselves changed.
 
 **1.5.0** — *show only hidden* now works on every client in Strict.
