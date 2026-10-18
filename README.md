@@ -24,17 +24,8 @@ git clone https://github.com/dilroopg/xExtension-HiddenCategories.git
 **Option 2 — the release zip** (no git needed): download
 `xExtension-HiddenCategories.zip` from the
 [latest release](https://github.com/dilroopg/xExtension-HiddenCategories/releases/latest) and
-unpack it in `FreshRSS/extensions/`. It contains one folder, `xExtension-HiddenCategories/` —
-leave the folder intact. Unpacking a newer zip over the top updates it and leaves your settings
-alone.
-
-Running FreshRSS in Docker? The official `freshrss/freshrss` image has **no `unzip`**, so extract
-on the host and copy the folder in, or run `unzip` from inside using the image's PHP:
-
-```sh
-unzip xExtension-HiddenCategories.zip -d .
-docker cp xExtension-HiddenCategories freshrss:/var/www/FreshRSS/extensions/
-```
+unpack it in `FreshRSS/extensions/`. Unpacking a newer zip over the top updates it and leaves
+your settings alone.
 
 Then open **Settings → Extensions → Hidden Categories → enable**.
 
