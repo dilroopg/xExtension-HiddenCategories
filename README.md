@@ -1,6 +1,6 @@
 # Hidden Categories
 
-> **Companion: [Favorite Categories](https://github.com/dilroopg/xExtension-FavoriteCategories)** — the opposite job. The star button filters the sidebar and stream *down to* a few categories you mark as favorites (`Show favorites` → `Hide favorites` → `Show all`). Use it when you have too many categories and want to read only a handful, rather than putting some away.
+> **Companion: [Favorite Categories](https://github.com/dilroopg/xExtension-FavoriteCategories)** — the opposite job. The star button filters the sidebar and stream *down to* a few categories you mark as favorites (`All` → `Only favorites` → `No favorites`). Use it when you have too many categories and want to read only a handful, rather than putting some away.
 >
 > The two don't conflict and neither needs the other. This extension hides rows; Favorite only dims them, and every rule it writes skips rows already hidden — so a category that is both **hidden and favorited stays hidden**. Installed together, their buttons share one row above the sidebar, splitting the width evenly.
 >
@@ -71,6 +71,7 @@ The eye *is* the button, and its icon shows which view you're in. Clicking cycle
 | ![closed eye](docs/eye-hidden.svg) | ![peeking eye](docs/eye-revealed.svg) | ![open eye](docs/eye-only.svg) |
 |---|---|---|
 | **hidden** — what you hid is gone | **revealed** — everything, hidden ones marked | **only** — just the hidden ones |
+| next to it, the button reads **Hidden** | the button reads **All shown** | the button reads **Only hidden** |
 
 | view | sidebar | stream | feeds |
 |---|---|---|---|
@@ -214,6 +215,22 @@ recorded so they can be restored). Deleting the extension folder leaves the file
 file itself to forget everything.
 
 ## Changelog
+
+**1.5.5** — the button label names the state you are in.
+
+1.5.3 flipped the labels to name the *destination* — what you would see after clicking. That turned
+out to be unreadable in practice: the eye told you where you were going while you were looking at
+something else, so the label never matched the page.
+
+The label now names what is on screen **right now**:
+
+| You are looking at | Button reads |
+|---|---|
+| hidden categories removed | **Hidden** |
+| everything back, hidden ones marked | **All shown** |
+| just the hidden categories | **Only hidden** |
+
+The tooltip says the same thing in a sentence. Clicking still cycles in the same order.
 
 **1.5.4** — two-word labels wrap instead of being cut off.
 
