@@ -65,6 +65,37 @@ unhide, switch back to Light, or disable the extension.
 Hiding in Strict does **not** stop fetching: entries keep arriving and still count as
 unread. Unhiding brings the whole backlog back.
 
+## Three views, one button
+
+Clicking the eye in the sidebar cycles:
+
+| eye | what you see | what happens to your feeds |
+|---|---|---|
+| closed | hidden categories gone | enforcement applied |
+| peeking | hidden ones **mixed back in** with everything else, tagged `HIDDEN` | **enforcement suspended** |
+| open | **only** hidden categories | **enforcement suspended** |
+
+Closing the eye re-applies the hiding.
+
+## What it costs
+
+Hiding is not free in Strict, and peeking is not free in any mode where Strict is on.
+
+- **Hiding or unhiding a category in Strict** writes FreshRSS's Visibility setting for every
+  feed in it. Measured: **188 feeds in ~1.4 s**, **864 feeds in ~3 s**. It is a burst at the
+  moment you click, not a per-page cost — page loads stay at their normal speed.
+- **Peeking and only-hidden are the expensive views**, not the cheap ones. At *Do not show*
+  the server never sends those articles, so the only way to show them is to lift the setting
+  for every feed first: **~2.6–3 s each way** for 864 feeds.
+- **While peeking or in only-hidden, your feeds are genuinely visible to every synced
+  client**, phone included. Those views work by turning the hiding off temporarily, so
+  anything syncing during that window sees them. Closing the eye hides them again.
+- **Hidden feeds keep being fetched.** Hiding changes what is displayed, never what is
+  downloaded. Unread counts can climb for categories you cannot see, and unhiding brings the
+  whole backlog back.
+- **Nothing runs in the background.** No cron, no external service, no network calls. Cost
+  happens when you click, and nowhere else.
+
 ## What it writes
 
 In **Light** (the default): nothing. Everything it stores lives in its own SQLite file
@@ -88,10 +119,14 @@ come back when you re-enable. Re-enabling in Strict re-applies the hiding automa
 
 ## Requirements
 
-- **FreshRSS 1.28.0 or newer.** The extension relies on `Minz_HookType::JsVars`, which does
-  not exist in earlier releases; on 1.27 and below it will not work.
-- SQLite support in PHP (bundled with stock PHP).
-- Tested on FreshRSS 1.30.1, PHP 8.4.
+**FreshRSS 1.28.0 or newer.** The extension relies on `Minz_HookType::JsVars`, which does not
+exist in earlier releases; on 1.27 and below it will not work. Nothing else is needed: no PHP
+extensions beyond what FreshRSS already requires (SQLite support, bundled with stock PHP), no
+build step, no network access, no other extension. Tested on FreshRSS 1.30.1, PHP 8.4.
+
+It also integrates with
+[RightClickActions](https://github.com/printfuck/xExtension-RightClickActions) if that is
+installed (right-click a category to hide it) and behaves normally without it.
 
 ## Install
 
