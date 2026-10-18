@@ -1,5 +1,7 @@
 # Hidden Categories
 
+Part of [dilroopg's FreshRSS extensions](https://github.com/dilroopg/freshrss-extensions) — see the hub for everything else.
+
 > **Companion: [Favorite Categories](https://github.com/dilroopg/xExtension-FavoriteCategories)** does the opposite job. Its star button narrows the sidebar and stream *down to* a few categories that you mark as favorites (`Mixed` → `Just favorites` → `Hide favorites`). Use it when you have too many categories and want to read only a handful of them, rather than putting some away.
 >
 > The two extensions don't conflict, and neither one needs the other. This one hides rows and Favorite Categories only dims them. Favorite Categories skips any row that is already hidden, so a category that is both hidden and favorited stays hidden. When you install both, their buttons share one row above the sidebar and split the width evenly.
