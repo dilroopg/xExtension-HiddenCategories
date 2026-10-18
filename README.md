@@ -42,8 +42,7 @@ extension. Tested on FreshRSS 1.30.1 / PHP 8.4, on a live ~1000-feed install and
 
 1. Click **Hide** next to a category — in the extension's settings, on the category box under
    **Subscription management**, or by right-clicking it in the sidebar (that one needs the
-   [Right Click Actions - Feed Settings Panel](#right-click-item-needs-another-extension)
-   extension).
+   [RightClickActions](#right-click-item-needs-another-extension) extension).
 2. A button with a green eye appears above the sidebar. Click it to cycle through three views.
 3. To get everything back: unhide the category, or press **Restore everything now**.
 
@@ -166,11 +165,16 @@ calls).
 
 - **Hiding or unhiding in Strict** writes FreshRSS's Visibility setting for every feed in the
   category: **188 feeds ≈ 1.4 s**, **864 feeds ≈ 3 s**.
-- **The peeking and only views are the expensive ones.** In Strict a hidden feed is marked *Do not
-  show*, so the server doesn't send its articles at all — showing them means lifting that for every
-  feed first: **≈ 2.6–3 s each way** for 864 feeds. In Light these views are instant.
-- **While in those two views, your feeds really are visible to every synced client**, phone
-  included. That's the only way to show them. Closing the eye hides them again.
+- **The peeking view is expensive.** In Strict a hidden feed is marked *Do not show*, so the server
+  doesn't send its articles at all — showing them means lifting that for every feed first:
+  **≈ 2.6–3 s each way** for 864 feeds. In Light it is instant.
+- **The only-hidden view is the most expensive**, because it has to be true for other clients too:
+  entering it reveals the hidden feeds *and* demotes every other feed, and leaving it undoes both.
+  That is two sweeps sized to your whole feed list. In Light it is instant.
+- **While peeking, your hidden feeds really are visible to every synced client**, phone included —
+  that is the only way to show them. Closing the eye hides them again.
+- **While showing only hidden, the reverse is true:** every other feed is marked *Do not show* for
+  every client, so your phone shows only the hidden categories. Closing the eye puts them back.
 - **Hidden feeds keep downloading.** Hiding changes what's displayed, never what's fetched, so
   unread counts can climb for categories you can't see.
 
