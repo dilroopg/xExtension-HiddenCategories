@@ -215,12 +215,21 @@ file itself to forget everything.
 
 ## Changelog
 
-**1.5.2** — the view button says *Show* / *Show all* / *Hide*.
+**1.5.3** — the button labels now name the destination.
 
-The three labels named each state at length ("Show hidden", "Show only hidden", "Hide them again").
-They are now one or two words each — *Show all* rather than a bare *All*, so the label says what
-the click does — in the sidebar button, the settings page, and the banner that appears while only
-hidden categories are showing. Nothing about the views themselves changed.
+The labels named the *action*, which read ambiguously next to each other: from the normal state the
+button said *Show all* while everything was already showing, and from the peek state it said *Show
+all* again while the click actually narrowed things down to only the hidden categories.
+
+Each label now says what you will be looking at **after** the click:
+
+| Showing now | Button says | After clicking |
+|---|---|---|
+| hidden categories removed | **Show all** | everything back, hidden ones marked |
+| everything back, hidden ones marked | **Only hidden** | just the hidden categories |
+| just the hidden categories | **Hide** | hidden categories removed again |
+
+Same three states, same cycle, same writes. Labels and tooltips only.
 
 **1.5.0** — *show only hidden* now works on every client in Strict.
 

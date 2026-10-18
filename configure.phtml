@@ -30,9 +30,10 @@ $url = _url('extension', 'configure', 'e', urlencode($this->getName()));
 // button can never disagree about what "next click" means
 $view = $store->view();
 $nextView = $store->nextView();
+// Labels name the DESTINATION: what you will be looking at after the click.
 $viewLabels = [
-	'hidden' => ['Show', 'Reveal the hidden categories in the sidebar'],
-	'revealed' => ['Show all', 'Show only the hidden categories, hide the rest'],
+	'hidden' => ['Show all', 'Show every category again, with the hidden ones marked'],
+	'revealed' => ['Only hidden', 'Narrow the sidebar and stream down to just the hidden categories'],
 	'only' => ['Hide', 'Go back to hiding them'],
 ];
 $viewLabel = [
@@ -40,7 +41,7 @@ $viewLabel = [
 	'revealed' => 'revealed',
 	'only' => 'only hidden',
 ][$view] ?? 'hidden';
-$nextViewLabel = $viewLabels[$nextView][0] ?? 'Show';
+$nextViewLabel = $viewLabels[$nextView][0] ?? 'Show all';
 $nextViewTitle = $viewLabels[$nextView][1] ?? '';
 
 // the lock card: passcode shown in plain text by design (it is the owner's own
