@@ -134,55 +134,88 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 	<div class="hc-group-label">Sidebar</div>
 	<?php
 	$showCount = $store->showCount();
-	$showLabel = $showCount && $store->showLabel();
-	// what the row will read with the current switches, so the choice is
-	// visible without going back to the sidebar
-	$sample = $showCount
-		? ($showLabel ? 'Hidden &middot; ' . count($hiddenRows) : (string)count($hiddenRows))
-		: '&hellip;';
+	$rowLabel = $store->rowLabel();
+	$hiddenN = count($hiddenRows);
+	// What the row actually reads with the saved settings. Built from the same
+	// pieces hidden.js draws, so this cannot drift from the real row.
+	$rowPreviewText = !$showCount
+		? ''
+		: ($rowLabel === '' ? (string)$hiddenN : $rowLabel . ' ' . $hiddenN);
 	?>
 	<div class="hc-lock-card">
 		<p class="hc-hint">
-			How the hidden row in the sidebar tree labels itself. Currently it reads
-			<strong><?= $sample ?></strong>. This changes the label only — nothing about
-			what is hidden, and nothing about the eye button or the lock.
+			How the hidden row in the sidebar tree labels itself. Label only — nothing about
+			what is hidden, the eye button, or the lock.
 		</p>
-		<?php
-		// One form per switch, each sending its target state explicitly. An
-		// unchecked checkbox sends no field at all, so posting the whole set
-		// from one form would silently clear the switch you did not touch.
-		$switch = static function (string $what, bool $on, bool $enabled, string $label, string $hint) use ($url, $csrf): void {
-			?>
-			<form method="post" action="<?= $url ?>" class="hc-switch-row">
-				<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
-				<input type="hidden" name="act" value="display" />
-				<input type="hidden" name="what" value="<?= $what ?>" />
-				<input type="hidden" name="on" value="<?= $on ? '0' : '1' ?>" />
-				<label class="hc-switch">
-					<input type="checkbox" <?= $on ? 'checked' : '' ?> <?= $enabled ? '' : 'disabled="disabled"' ?>
-						onchange="this.form.submit()" />
-					<span><?= $label ?></span>
-				</label>
-				<span class="hc-hint"><?= $hint ?></span>
-			</form>
-			<?php
-		};
-		$switch(
-			'count',
-			$showCount,
-			true,
-			'Show how many categories are hidden',
-			$showCount ? 'The number is drawn next to the label.' : 'Obscured: the row stays, with no number.'
-		);
-		$switch(
-			'label',
-			$showLabel,
-			$showCount,
-			'"Hidden" label in front of the number',
-			!$showCount ? 'Needs the count on — the label has nothing to sit in front of.'
-				: ($showLabel ? 'Reads "Hidden 3".' : 'Reads "3" on its own.')
-		);
-		?>
+
+		<?php // the saved state, drawn as the real row: this is the confirmation that a change landed ?>
+		<div class="hc-preview">
+			<span class="hc-preview-cap">Now reads</span>
+			<span class="hc-preview-row">
+				<span class="hc-caret" aria-hidden="true">&#9662;</span>
+				<?php if ($rowPreviewText === '') { ?>
+					<span class="hc-preview-none">just the caret &nbsp;&mdash; nothing else</span>
+				<?php } elseif ($rowLabel !== '' && $showCount) { ?>
+					<span class="hc-row-label"><?= htmlspecialchars($rowLabel, ENT_QUOTES) ?></span>
+					<span class="hc-row-num"><?= $hiddenN ?></span>
+				<?php } else { ?>
+					<span class="hc-row-num"><?= $hiddenN ?></span>
+				<?php } ?>
+			</span>
+		</div>
+
+		<form method="post" action="<?= $url ?>" class="hc-switch-row">
+			<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
+			<input type="hidden" name="act" value="display" />
+			<input type="hidden" name="what" value="count" />
+			<input type="hidden" name="on" value="<?= $showCount ? '0' : '1' ?>" />
+			<label class="hc-switch">
+				<input type="checkbox" <?= $showCount ? 'checked' : '' ?> onchange="this.form.submit()" />
+				<span>Show how many categories are hidden</span>
+			</label>
+			<span class="hc-hint"><?= $showCount
+				? 'The number is drawn' . ($rowLabel === '' ? ' on its own.' : ' after the label.')
+				: 'Nothing is drawn but the caret.' ?></span>
+		</form>
+
+		<form method="post" action="<?= $url ?>" class="hc-switch-row hc-label-form">
+			<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
+			<input type="hidden" name="act" value="display" />
+			<input type="hidden" name="what" value="label" />
+			<label class="hc-label-field">
+				<span>Label in front of the number</span>
+				<input type="text" name="label" class="hc-label-input"
+					value="<?= htmlspecialchars($rowLabel, ENT_QUOTES) ?>"
+					placeholder="leave empty for the number on its own"
+					maxlength="40" autocomplete="off" data-hc-label
+					<?= $showCount ? '' : 'disabled="disabled"' ?> />
+			</label>
+			<button class="btn" type="submit" <?= $showCount ? '' : 'disabled="disabled"' ?>>Save label</button>
+			<span class="hc-hint">
+				<?php if (!$showCount) { ?>
+					Needs the count on — the label sits in front of the number.
+				<?php } elseif ($rowLabel === '') { ?>
+					Empty: the row shows the number on its own.
+				<?php } else { ?>
+					Live: typing here previews the row below; press Save to keep it.
+				<?php } ?>
+			</span>
+		</form>
+		<div class="hc-live" aria-live="polite">
+			<span class="hc-live-cap">After saving</span>
+			<span class="hc-preview-row" data-hc-live>
+				<span class="hc-caret" aria-hidden="true">&#9662;</span>
+				<?php if ($rowLabel !== '' && $showCount) { ?>
+					<span class="hc-row-label"><?= htmlspecialchars($rowLabel, ENT_QUOTES) ?></span>
+					<span class="hc-row-num"><?= $hiddenN ?></span>
+				<?php } else { ?>
+					<span class="hc-row-num"><?= $showCount ? $hiddenN : '' ?></span>
+				<?php } ?>
+			</span>
+			<span class="hc-live-msg" data-hc-live-msg>
+				<?= $rowLabel === '' ? 'unchanged — showing the number alone' : 'unchanged' ?>
+			</span>
+		</div>
 	</div>
 
 	<div class="hc-actions">

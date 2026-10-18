@@ -401,25 +401,27 @@
 		title.setAttribute('role', 'button');
 		title.setAttribute('aria-expanded', view === 'hidden' ? 'false' : 'true');
 		title.title = cats.length + ' hidden ' + (cats.length === 1 ? 'category' : 'categories');
-		// Two display switches from the settings page (both default on):
-		//   showCount  the number of hidden categories is drawn
-		//   showLabel  the word "Hidden" sits in front of it
+		// Two settings from the settings page:
+		//   showCount  the number of hidden categories is drawn (on by default)
+		//   rowLabel   free text in front of that number; '' = number only
 		// With the count off the row shows nothing but the caret — no number,
-		// no word — so a glance at the screen says nothing. The row stays: it
+		// no label — so a glance at the screen says nothing. The row stays: it
 		// is still how you expand the list, and the eye button above is
 		// unaffected. The accessible name stays descriptive either way, and so
 		// does the tooltip, so the two never disagree with the label.
 		var showCount = HC.showCount !== false;
-		var showLabel = showCount && HC.showLabel !== false;
-		var labelText = !showCount ? ''
-			: (showLabel ? 'Hidden' : String(cats.length));
-		var numText = (showCount && showLabel) ? String(cats.length) : '';
+		var label = typeof HC.rowLabel === 'string' ? HC.rowLabel : 'Hidden';
 		title.innerHTML = '<button class="dropdown-toggle" type="button" title="Expand">'
 			+ '<span class="hc-caret">&#9662;</span></button>'
-			+ (labelText === '' ? ''
-				: '<span class="title"><span class="hc-row-label">' + labelText + '</span>'
-					+ (numText === '' ? '' : '<span class="hc-row-num">' + numText + '</span>')
+			+ (!showCount ? ''
+				: '<span class="title">'
+					+ (label === '' ? '' : '<span class="hc-row-label"></span>')
+					+ '<span class="hc-row-num">' + cats.length + '</span>'
 					+ '</span>');
+		// the label goes in as TEXT, never as markup: it is user-typed and
+		// must not be able to inject anything into the page
+		var labelEl = title.querySelector('.hc-row-label');
+		if (labelEl) { labelEl.textContent = label; }
 
 		var chip = document.createElement('span');
 		chip.className = 'hc-chip';

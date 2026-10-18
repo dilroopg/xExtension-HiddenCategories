@@ -19,6 +19,8 @@ final class HiddenCategoriesStore
 {
 	public const SCHEMA = 1;
 	public const MODES = ['light', 'strict'];
+	/** What the sidebar row is labelled out of the box, so the field is never blank-and-puzzling. */
+	public const DEFAULT_LABEL = 'Hidden';
 
 	private const DB_FILE = 'state.sqlite';
 
@@ -218,12 +220,12 @@ final class HiddenCategoriesStore
 		$this->setMetaIfAbsent('mode', 'light');
 		$this->setMetaIfAbsent('view', 'hidden');
 		$this->setMetaIfAbsent('locked', '0');
-		// display options for the sidebar "Hidden" row. Both are display-only:
-		// they change one row's label, never what is hidden or enforced.
+		// display options for the sidebar "Hidden" row. Display-only: they change
+		// one row's label, never what is hidden or enforced.
 		//   show_count   '1' draws the number of hidden categories
-		//   show_label   '1' puts the word "Hidden" in front of that number
+		//   row_label    free text drawn in FRONT of that number; '' = number only
 		$this->setMetaIfAbsent('show_count', '1');
-		$this->setMetaIfAbsent('show_label', '1');
+		$this->setMetaIfAbsent('row_label', self::DEFAULT_LABEL);
 	}
 
 	// ---------------------------------------------------------------- lock
@@ -687,10 +689,9 @@ final class HiddenCategoriesStore
 
 	// ----------------------------------------------------- display options
 	//
-	// Two switches for the sidebar "Hidden" row only. Both default to ON, which
-	// is the row this extension has always drawn ("Hidden 3"). A store that
-	// predates these keys reads them as ON through the default argument, so an
-	// existing install looks unchanged until the user flips something.
+	// Two settings for the sidebar row only. Anything unset reads as the
+	// default through getMeta's fallback, so an install that predates these
+	// keys looks unchanged until the user changes something.
 
 	/** Draw the number of hidden categories in the sidebar row. */
 	public function showCount(): bool
@@ -698,15 +699,18 @@ final class HiddenCategoriesStore
 		return $this->getMeta('show_count', '1') === '1';
 	}
 
-	/** Put the word "Hidden" in front of that number. */
-	public function showLabel(): bool
+	/**
+	 * The text drawn in front of the number. Free text, so it can be anything
+	 * the user wants the row to look like — or empty, which means "number on
+	 * its own". Trimmed and capped so one paste cannot put a paragraph in the
+	 * sidebar; inner spacing is preserved as typed.
+	 */
+	public function rowLabel(): string
 	{
-		return $this->getMeta('show_label', '1') === '1';
+		return $this->getMeta('row_label', self::DEFAULT_LABEL);
 	}
 
-	/**
-	 * @return array{ok:bool,message:string}
-	 */
+	/** @return array{ok:bool,message:string} */
 	public function setShowCount(bool $on): array
 	{
 		if (!$this->setMeta('show_count', $on ? '1' : '0')) {
@@ -718,22 +722,28 @@ final class HiddenCategoriesStore
 	}
 
 	/**
-	 * Refuses to be turned on while the count is off: a label with no number
-	 * behind it would read as a bare word, which is noise rather than privacy.
+	 * Save the row's label text. Empty is a valid choice (number only), so it
+	 * is stored rather than rejected — the difference between "cleared" and
+	 * "never set" would otherwise be invisible to the user.
 	 *
 	 * @return array{ok:bool,message:string}
 	 */
-	public function setShowLabel(bool $on): array
+	public function setRowLabel(string $label): array
 	{
-		if ($on && !$this->showCount()) {
-			return ['ok' => false, 'message' => 'Turn the count back on first — a label with no number does nothing.'];
+		// Newlines and tabs would break the row layout; collapse all whitespace
+		// runs to single spaces and trim the ends.
+		$label = trim((string)preg_replace('/\s+/u', ' ', $label));
+		if (function_exists('mb_substr')) {
+			$label = mb_substr($label, 0, 40);
+		} else {
+			$label = substr($label, 0, 40);
 		}
-		if (!$this->setMeta('show_label', $on ? '1' : '0')) {
-			return ['ok' => false, 'message' => 'Could not save the display option.'];
+		if (!$this->setMeta('row_label', $label)) {
+			return ['ok' => false, 'message' => 'Could not save the label.'];
 		}
-		return ['ok' => true, 'message' => $on
-			? 'The sidebar row is labelled "Hidden" again.'
-			: 'The sidebar row shows the number on its own.'];
+		return ['ok' => true, 'message' => $label === ''
+			? 'Saved: the sidebar row shows the number on its own.'
+			: 'Saved: the sidebar row is labelled "' . $label . '".'];
 	}
 
 	// ---------------------------------------------------------------- reads

@@ -86,18 +86,18 @@ are the ones you'd hidden:
 Clicking again from `only` returns you to `hidden`, which re-applies the hiding.
 
 The row at the bottom of the sidebar shows **how many categories are hidden**, labelled
-`Hidden 7` by default. Both halves can be switched off under **Sidebar** in the settings:
+`Hidden 7` by default, and under **Sidebar** in the settings you can change both parts:
 
-| switch | on (default) | off |
-|---|---|---|
-| **Show how many categories are hidden** | the number is drawn | nothing but the caret — no number, no word |
-| **"Hidden" label in front of the number** | `Hidden 7` | `7` on its own |
+| setting | what it does |
+|---|---|
+| **Show how many categories are hidden** (on by default) | off — the row draws nothing but the caret: no number, no label |
+| **Label in front of the number** (default `Hidden`) | type any text, or clear it to show the number on its own |
 
-The second switch is greyed out while the count is off, since a label with no number is just a
-stray word. Neither switch changes what is hidden, what Strict enforces, or the eye button — they
-only change this row's text. The row itself always stays: it's how you open the list, and the
-full text is in its tooltip. With the count switched off, someone glancing at the screen learns
-nothing from it.
+The settings show the row twice: **Now reads** is what is saved, **After saving** follows what
+you type before you commit it. Neither setting changes what is hidden, what Strict enforces, or
+the eye button — they only change this row's text. The row itself always stays: it's how you open
+the list, and the full text is in its tooltip. With the count switched off, someone glancing at
+the screen learns nothing from it.
 
 ## What "private" covers — and what it doesn't
 

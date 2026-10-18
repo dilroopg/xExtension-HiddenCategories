@@ -111,7 +111,7 @@ class HiddenCategoriesExtension extends Minz_Extension
 			// changes what is hidden or enforced, so they are safe to send to
 			// the page even while locked.
 			'showCount' => $this->store()->showCount(),
-			'showLabel' => $this->store()->showLabel(),
+			'rowLabel' => $this->store()->rowLabel(),
 			// names+counts for the hidden ones only — a hidden category with no
 			// row in this map is named by its id, never by a guess
 			'meta' => array_filter($counts, static fn ($id) => in_array($id, $cats, true), ARRAY_FILTER_USE_KEY),
@@ -780,22 +780,27 @@ class HiddenCategoriesExtension extends Minz_Extension
 			 * disagree. Safe to press repeatedly.
 			 */
 			case 'display':
-				// The two sidebar display switches. Each is posted as its own
-				// checkbox, and an unchecked box sends nothing at all — so the
-				// REQUEST ITSELF says which one was on the form, otherwise
-				// saving one switch would silently reset the other. 'what'
-				// names the switch being changed.
+				// The sidebar row settings. Each control is posted as its own
+				// form with the state it is moving to, so saving one can never
+				// silently reset the other (an unchecked checkbox and an empty
+				// text field both send nothing at all). 'what' names the one
+				// that was changed.
 				$what = Minz_Request::paramStringNull('what', true);
-				if ($what !== 'count' && $what !== 'label') {
+				if ($what === 'count') {
+					$r = $this->store()->setShowCount(Minz_Request::paramStringNull('on', true) === '1');
+				} elseif ($what === 'label') {
+					// paramStringNull, so a field that is present but empty is
+					// respected as "number only" instead of being treated as
+					// absent and leaving the old label in place.
+					$label = Minz_Request::paramStringNull('label', true);
+					if ($label === null) {
+						Minz_Request::bad('Save failed: the label field was missing, so nothing was changed.', $this->selfUrl());
+						return;
+					}
+					$r = $this->store()->setRowLabel($label);
+				} else {
 					Minz_Request::bad('Save failed: the form did not say which option to change, so nothing was changed.', $this->selfUrl());
 					return;
-				}
-				$on = Minz_Request::paramStringNull('on', true) === '1';
-				if ($what === 'count') {
-					$r = $this->store()->setShowCount($on);
-				} else {
-					// Refused while the count is off; the store says why.
-					$r = $this->store()->setShowLabel($on);
 				}
 				if ($r['ok']) {
 					Minz_Request::good($r['message'], $this->selfUrl());
