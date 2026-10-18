@@ -1,5 +1,9 @@
 # Hidden Categories
 
+> **Companion: [Favorite Categories](https://github.com/dilroopg/xExtension-FavoriteCategories)** — the opposite job. The star button filters the sidebar and stream *down to* a few categories you mark as favorites (`Show favorites` → `Hide favorites` → `Show all`). Use it when you have too many categories and want to read only a handful, rather than putting some away.
+>
+> The two don't conflict and neither needs the other. This extension hides rows; Favorite only dims them, and every rule it writes skips rows already hidden — so a category that is both **hidden and favorited stays hidden**. Installed together, their buttons share one row above the sidebar, splitting the width evenly.
+
 **No creeping on your hidden feeds.** Hide categories from FreshRSS so they aren't on screen —
 no sidebar entry, no articles in your main stream — and bring them back in one click.
 
