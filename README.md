@@ -3,11 +3,11 @@
 Keep parts of your feed reading private. Hide categories you don't want on screen — and bring
 them back in one click.
 
-This is aimed at **screen lurkers**: someone at the next desk, a person walking past, a friend
-picking up your phone. The category stays in your FreshRSS and keeps updating, but it drops off
-your main stream and out of the sidebar, so there is nothing on screen for them to read. In
-Strict mode it also drops off your phone and every other synced app. One click brings it back
-when you're alone.
+**No creeping on your hidden feeds.** This is aimed at screen lurkers: someone at the next desk,
+a person walking past, a friend picking up your phone. The category stays in your FreshRSS and
+keeps updating, but it drops off your main stream and out of the sidebar, so there is nothing on
+screen for them to read. In Strict mode it also drops off your phone and every other synced app.
+One click brings it back when you're alone.
 
 FreshRSS has no "hide a category" switch. The usual workarounds are to unfollow the feeds (and
 lose them) or to collapse the folder (which still floods the main stream). This adds the missing
