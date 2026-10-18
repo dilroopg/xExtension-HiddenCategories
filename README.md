@@ -117,7 +117,8 @@ pick a state or type, and an "Unsaved changes" line stays until you commit. Noth
 what is hidden, what Strict enforces, or the eye button — the row itself always stays, because it's
 how you open the list. With the first state, someone glancing at the screen learns nothing from it.
 
-## What "private" covers — and what it doesn't
+<details>
+<summary>What "private" covers — and what it doesn't</summary>
 
 Worth reading once, so you know what you're relying on.
 
@@ -137,7 +138,10 @@ stream, and in Strict out of the API that your phone and reader apps talk to.
 If you need the content itself kept from someone with server access, this isn't the tool for it —
 that needs encryption at rest, which no FreshRSS extension provides.
 
-## Optional passcode
+</details>
+
+<details>
+<summary>Optional passcode lock</summary>
 
 For one situation: you've hidden something, someone walks up to your unlocked computer, and you
 don't want them clicking the eye. Set a passcode in the settings and a red lock button appears
@@ -156,6 +160,8 @@ click. Locking hides the eye and the count row but changes nothing about your fe
 stays applied throughout.
 
 If you want actual security, use FreshRSS's own authentication. This is a curtain, not a door.
+
+</details>
 
 ## What it costs
 
