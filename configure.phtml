@@ -4,6 +4,12 @@ declare(strict_types=1);
 /**
  * Hidden Categories — settings.
  *
+ * Shape: one list of categories, hidden rows first, one button per row. Mode is
+ * a single control. Everything diagnostic is collapsed into <details>.
+ *
+ * Deliberately NOT: a wall of prose, four rival sections, or timestamps in the
+ * default view. If a line here is not a control or a count, it lives in Details.
+ *
  * @var HiddenCategoriesExtension $this
  */
 
@@ -13,137 +19,125 @@ $mode = $store->mode();
 $labels = $this->modeLabels();
 $hidden = $store->hiddenCategories();
 $hiddenIds = [];
-foreach ($hidden as $h) { $hiddenIds[$h['cat_id']] = true; }
+foreach ($hidden as $h) {
+	$hiddenIds[$h['cat_id']] = true;
+}
 $problems = $storeOk ? $store->invariantProblems() : [];
 $csrf = FreshRSS_Auth::csrfToken();
 $url = _url('extension', 'configure', 'e', urlencode($this->getName()));
+$only = $store->only();
+
 $cats = $this->categories();
+$hiddenRows = [];
+$visibleRows = [];
+foreach ($cats as $c) {
+	if (isset($hiddenIds[$c['id']])) {
+		$hiddenRows[] = $c;
+	} else {
+		$visibleRows[] = $c;
+	}
+}
 $totalFeeds = 0;
-foreach ($cats as $c) { $totalFeeds += $c['feeds']; }
+foreach ($cats as $c) {
+	$totalFeeds += $c['feeds'];
+}
+
+/** One row: dot, name, feed count, [Hide|Show] */
+$row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
+	?>
+	<div class="hc-row<?= $isHidden ? ' hc-is-hidden' : '' ?>">
+		<span class="hc-dot" aria-hidden="true"><?= $isHidden ? '&#9679;' : '&#9675;' ?></span>
+		<span class="hc-name" title="<?= htmlspecialchars($c['name'], ENT_QUOTES) ?>"><?= htmlspecialchars($c['name'], ENT_QUOTES) ?></span>
+		<span class="hc-feeds"><?= $c['feeds'] ?> <?= $c['feeds'] === 1 ? 'feed' : 'feeds' ?></span>
+		<form method="post" action="<?= $url ?>">
+			<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
+			<input type="hidden" name="act" value="<?= $isHidden ? 'unhide' : 'hide' ?>" />
+			<input type="hidden" name="cat" value="<?= $c['id'] ?>" />
+			<button class="hc-act" type="submit" title="<?= $isHidden ? 'Show this category again' : 'Hide this category' ?>"><?= $isHidden ? 'Show' : 'Hide' ?></button>
+		</form>
+	</div>
+	<?php
+};
 ?>
 <div id="hidden-categories-config" class="hidden-categories">
 
-	<div class="form-group">
-		<h2>Status</h2>
-		<p class="help">
-			This extension keeps a set of categories out of your way. It never deletes or renames a
-			category, never moves a feed, and never touches settings owned by other extensions.
+	<?php if (!$storeOk) { ?>
+		<p class="alert alert-error">
+			The extension cannot reach its own settings file, so hiding is unavailable:
+			<?= htmlspecialchars($store->error(), ENT_QUOTES) ?>
 		</p>
-		<ul class="help">
-			<li>Mode: <strong><?= htmlspecialchars($labels[$mode] ?? $mode, ENT_QUOTES) ?></strong></li>
-			<li>Hidden categories: <strong><?= count($hidden) ?></strong> &middot;
-				feeds currently enforced on FreshRSS's own settings:
-				<strong><?= $store->snapshotCount() ?></strong></li>
-			<li>Categories here: <strong><?= count($cats) ?></strong> &middot;
-				feeds: <strong><?= $totalFeeds ?></strong></li>
-			<li>State database: <code><?= htmlspecialchars($store->path(), ENT_QUOTES) ?></code>
-				<?php if ($storeOk) { ?>
-					&middot; healthy (<?= htmlspecialchars($store->integrity(), ENT_QUOTES) ?>)
-				<?php } else { ?>
-					&middot; <strong>unusable: <?= htmlspecialchars($store->error(), ENT_QUOTES) ?></strong>
-				<?php } ?>
-			</li>
-			<li>First enabled: <strong><?= htmlspecialchars($store->getMeta('first_enabled_at', '—'), ENT_QUOTES) ?></strong>
-				&middot; last disabled: <strong><?= htmlspecialchars($store->getMeta('last_disabled_at', 'never'), ENT_QUOTES) ?></strong></li>
-			<li>Settings kept across disable: mode, hidden set and this database. Spun the
-				extension off and on again and it comes back exactly as you left it.</li>
-		</ul>
-		<?php if ($store->notice() !== '') { ?>
-			<p class="alert alert-warn"><?= htmlspecialchars($store->notice(), ENT_QUOTES) ?></p>
-		<?php } ?>
-		<?php foreach ($problems as $p) { ?>
-			<p class="alert alert-error"><?= htmlspecialchars($p, ENT_QUOTES) ?></p>
+	<?php } ?>
+	<?php if ($store->notice() !== '') { ?>
+		<p class="alert alert-warn"><?= htmlspecialchars($store->notice(), ENT_QUOTES) ?></p>
+	<?php } ?>
+	<?php foreach ($problems as $p) { ?>
+		<p class="alert alert-error"><?= htmlspecialchars($p, ENT_QUOTES) ?></p>
+	<?php } ?>
+
+	<?php if ($hiddenRows === []) { ?>
+		<div class="hc-empty">
+			<strong>Nothing is hidden.</strong><br />
+			Press <em>Hide</em> next to a category below. Hiding is temporary and one click away
+			from being undone — nothing is ever deleted or renamed.
+		</div>
+	<?php } else { ?>
+		<div class="hc-group-label">Hidden &middot; <?= count($hiddenRows) ?></div>
+		<div class="hc-list">
+			<?php foreach ($hiddenRows as $c) { $row($c, true); } ?>
+		</div>
+	<?php } ?>
+
+	<div class="hc-group-label">Categories &middot; <?= count($visibleRows) ?> visible of <?= count($cats) ?></div>
+	<div class="hc-list">
+		<?php foreach ($visibleRows as $c) { $row($c, false); } ?>
+		<?php if ($visibleRows === []) { ?>
+			<div class="hc-empty">Every category is hidden.</div>
 		<?php } ?>
 	</div>
 
-	<form method="post" action="<?= $url ?>" id="hidden-categories-mode-form" class="form-group">
+	<div class="hc-group-label">Mode</div>
+	<form method="post" action="<?= $url ?>" id="hidden-categories-mode-form" class="hc-mode-form">
 		<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
 		<input type="hidden" name="act" value="mode" />
-		<h2>Mode</h2>
-
-		<fieldset>
-			<label>
-				<input type="radio" name="mode" value="light" <?= $mode === 'light' ? 'checked' : '' ?> />
-				<strong><?= htmlspecialchars($labels['light'], ENT_QUOTES) ?></strong> (default)
-			</label>
-			<p class="help">
-				Nothing is written to your feeds. Hidden categories and their articles are filtered in the
-				browser. Clients without JavaScript, and the Google Reader / Fever API, still see everything.
-				Turning the extension off removes the effect completely, because nothing was ever changed.
-			</p>
-			<label>
-				<input type="radio" name="mode" value="strict" <?= $mode === 'strict' ? 'checked' : '' ?> />
-				<strong><?= htmlspecialchars($labels['strict'], ENT_QUOTES) ?></strong>
-			</label>
-			<p class="help">
-				Feeds in a hidden category get FreshRSS's own "only show in this category" setting, so the
-				main stream is filtered before it is rendered — for every client. The previous value is
-				saved first and can be put back exactly: switching the extension off, or pressing
-				<em>Restore everything now</em> below, does it for you.
-			</p>
-		</fieldset>
-
-		<button class="btn btn-important" type="submit">Save mode</button>
+		<label class="hc-mode-opt" title="Nothing is written to your feeds. Filtered in the browser; the API and clients without JavaScript still see everything.">
+			<input type="radio" name="mode" value="light" <?= $mode === 'light' ? 'checked' : '' ?> />
+			Light <span class="hc-hint">&mdash; visual only, writes nothing</span>
+		</label>
+		<label class="hc-mode-opt" title="Feeds in hidden categories get FreshRSS's own 'only show in this category' setting. The previous value is saved, and restored when you unhide or switch the extension off.">
+			<input type="radio" name="mode" value="strict" <?= $mode === 'strict' ? 'checked' : '' ?> />
+			Strict <span class="hc-hint">&mdash; filters for every client</span>
+		</label>
+		<button class="btn btn-important" type="submit">Save</button>
 	</form>
 
-	<div class="form-group">
-		<h2>Turning it off</h2>
-		<p class="help">
-			Switching this extension off in <em>Settings &rarr; Extensions</em> runs its own
-			shutdown routine first: anything it changed is put back, and only then is it
-			disabled. If that routine cannot finish for any reason, the extension stays enabled
-			and says why, so you keep a page to fix it from.
-		</p>
-		<p class="help">
-			Your settings on this page (mode, and the hidden set once hiding exists) are
-			<strong>kept</strong> while the extension is off, so switching it back on returns
-			you to exactly the state you left.
-		</p>
-		<form method="post" action="<?= $url ?>" id="hidden-categories-restore-form">
+	<div class="hc-actions">
+		<?php if ($hiddenRows !== []) { ?>
+			<form method="post" action="<?= $url ?>">
+				<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
+				<input type="hidden" name="act" value="only" />
+				<input type="hidden" name="on" value="<?= $only ? '0' : '1' ?>" />
+				<button class="btn" type="submit"><?= $only ? 'Stop showing only hidden' : 'View only hidden' ?></button>
+			</form>
+		<?php } ?>
+		<form method="post" action="<?= $url ?>">
 			<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
 			<input type="hidden" name="act" value="restore" />
-			<button class="btn" type="submit">Restore everything now</button>
-			<span class="help">Safe to press any time, and any number of times — it is the same
-				routine that runs when you switch the extension off.</span>
+			<button class="btn" type="submit" title="Put back anything this extension changed. Safe to press any number of times.">Restore everything now</button>
 		</form>
 	</div>
 
-	<div class="form-group">
-		<h2>Categories</h2>
-		<p class="help">
-			Hiding is next. This table is read-only for now: it proves the category list and feed counts
-			before any hide control is wired to them.
-		</p>
-		<div class="table-wrapper">
-			<table class="table">
-				<thead>
-					<tr>
-						<th>#</th>
-						<th>Category</th>
-						<th>Feeds</th>
-						<th>Hidden</th>
-					</tr>
-				</thead>
-				<tbody>
-				<?php foreach ($cats as $c) { ?>
-					<tr>
-						<td><?= $c['id'] ?></td>
-						<td><?= htmlspecialchars($c['name'], ENT_QUOTES) ?></td>
-						<td><?= $c['feeds'] ?></td>
-						<td>
-							<?php if (isset($hiddenIds[$c['id']])) { ?>
-								<strong>hidden</strong>
-							<?php } else { ?>
-								&mdash;
-							<?php } ?>
-						</td>
-					</tr>
-				<?php } ?>
-				<?php if ($cats === []) { ?>
-					<tr><td colspan="4">No categories found.</td></tr>
-				<?php } ?>
-				</tbody>
-			</table>
-		</div>
-	</div>
+	<details class="hc-details">
+		<summary>Details</summary>
+		<dl>
+			<dt>Mode</dt><dd><?= htmlspecialchars($labels[$mode] ?? $mode, ENT_QUOTES) ?></dd>
+			<dt>Hidden</dt><dd><?= count($hiddenRows) ?> of <?= count($cats) ?> categories
+				&middot; <?= $totalFeeds ?> feeds total</dd>
+			<dt>Feeds enforced</dt><dd><?= $store->snapshotCount() ?><?= $mode === 'strict' ? '' : ' (light mode never writes to feeds)' ?></dd>
+			<dt>On since</dt><dd><?= htmlspecialchars($store->getMeta('first_enabled_at', '—'), ENT_QUOTES) ?></dd>
+			<dt>Last disabled</dt><dd><?= htmlspecialchars($store->getMeta('last_disabled_at', 'never'), ENT_QUOTES) ?></dd>
+			<dt>Storage</dt><dd><code><?= htmlspecialchars($store->path(), ENT_QUOTES) ?></code><?= $storeOk ? ' &middot; ' . htmlspecialchars($store->integrity(), ENT_QUOTES) : '' ?></dd>
+			<dt>Switching off</dt><dd>Runs this extension's own restore first, then disables it. If the restore cannot finish, the extension stays enabled and says why. Mode and hidden set are kept while it is off.</dd>
+			<dt>Never touched</dt><dd>Categories are not deleted or renamed, feeds are not moved, nothing is marked read, and other extensions' feed settings are left alone.</dd>
+		</dl>
+	</details>
 </div>

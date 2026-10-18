@@ -172,6 +172,7 @@ final class HiddenCategoriesStore
 	{
 		$this->setMetaIfAbsent('schema', (string)self::SCHEMA);
 		$this->setMetaIfAbsent('mode', 'light');
+		$this->setMetaIfAbsent('only', '0');
 	}
 
 	// ---------------------------------------------------------------- meta
@@ -255,6 +256,94 @@ final class HiddenCategoriesStore
 			'restored' => 0,
 			'message' => count($snaps) . ' feed(s) still have a saved snapshot but no restore routine exists yet.',
 		];
+	}
+
+	// ------------------------------------------------------------- hiding
+
+	/**
+	 * Hide one category. Idempotent: hiding an already-hidden category changes
+	 * nothing and reports so.
+	 *
+	 * This is the ONLY write path for hiding. Every control in the UI — the
+	 * settings list, the sidebar row, the right-click menu, the gear checkbox —
+	 * posts to the same action which calls this method, so they cannot diverge.
+	 *
+	 * @return array{ok:bool,message:string,changed:bool}
+	 */
+	public function hideCategory(int $catId, string $catName): array
+	{
+		if ($catId <= 0) {
+			return ['ok' => false, 'changed' => false, 'message' => 'No category was named, so nothing changed.'];
+		}
+		try {
+			$st = $this->pdo()->prepare('INSERT OR IGNORE INTO hidden_cat (cat_id, cat_name, hidden_at) VALUES (:id, :n, :t)');
+			$st->execute([':id' => $catId, ':n' => $catName, ':t' => date('c')]);
+			$changed = $st->rowCount() > 0;
+			$this->writes++;
+		} catch (Throwable $e) {
+			return ['ok' => false, 'changed' => false, 'message' => 'Could not save the hidden flag: ' . $e->getMessage()];
+		}
+		return [
+			'ok' => true,
+			'changed' => $changed,
+			'message' => $changed
+				? '"' . $catName . '" is now hidden.'
+				: '"' . $catName . '" was already hidden.',
+		];
+	}
+
+	/**
+	 * Unhide one category. Idempotent, same reasoning as hideCategory().
+	 *
+	 * Removing the row from `hidden_cat` is enough to bring the category back in
+	 * Light mode, because all of the showing is derived from that table. In
+	 * Strict mode the caller also restores the feed snapshots for that category
+	 * before the row goes, so a failure leaves the category hidden rather than
+	 * un-hidden with modified feeds.
+	 *
+	 * @return array{ok:bool,message:string,changed:bool}
+	 */
+	public function unhideCategory(int $catId, string $catName): array
+	{
+		if ($catId <= 0) {
+			return ['ok' => false, 'changed' => false, 'message' => 'No category was named, so nothing changed.'];
+		}
+		try {
+			$st = $this->pdo()->prepare('DELETE FROM hidden_cat WHERE cat_id = :id');
+			$st->execute([':id' => $catId]);
+			$changed = $st->rowCount() > 0;
+			$this->writes++;
+		} catch (Throwable $e) {
+			return ['ok' => false, 'changed' => false, 'message' => 'Could not clear the hidden flag: ' . $e->getMessage()];
+		}
+		return [
+			'ok' => true,
+			'changed' => $changed,
+			'message' => $changed
+				? '"' . $catName . '" is showing again.'
+				: '"' . $catName . '" was not hidden.',
+		];
+	}
+
+	/** @return list<int> category ids, ascending — what the page filter uses. */
+	public function hiddenIds(): array
+	{
+		try {
+			return array_map('intval', $this->pdo()->query('SELECT cat_id FROM hidden_cat ORDER BY cat_id')->fetchAll(PDO::FETCH_COLUMN));
+		} catch (Throwable $e) {
+			return [];
+		}
+	}
+
+	/** "Only hidden" view: stored per user, ignored when the extension is off. */
+	public function only(): bool
+	{
+		return $this->getMeta('only', '0') === '1';
+	}
+
+	public function setOnly(bool $only): bool
+	{
+		return $this->setMeta('only', $only ? '1' : '0');
 	}
 
 	public function setMeta(string $key, string $value): bool

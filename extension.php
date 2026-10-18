@@ -51,6 +51,53 @@ class HiddenCategoriesExtension extends Minz_Extension
 		} catch (Throwable $e) {
 			Minz_Log::warning('HiddenCategories: state store unavailable: ' . $e->getMessage());
 		}
+
+		// The one global touch point: JsVars fires exactly once per page from
+		// the page head. It carries category ids only (never feed or article
+		// data), so the payload cannot grow with subscription count.
+		$this->registerHook(Minz_HookType::JsVars, [$this, 'injectJsVars']);
+
+		// Both files are optional by design: the CSS does the hiding from the
+		// data attribute, the JS adds convenience (sidebar section, menus). If
+		// either fails to load, hiding still works. The CSS is registered here in
+		// init() because a stylesheet has to be in <head>, and it is the only
+		// global thing this extension needs.
+		Minz_View::appendStyle($this->getFileUrl('hidden.css'));
+		Minz_View::appendScript($this->getFileUrl('hidden.js', 'js', true));
+	}
+
+	/**
+	 * The page payload. Consumed by hidden.css (through the data attribute that
+	 * hidden.js sets before paint) and by hidden.js.
+	 *
+	 * @param array<string,mixed> $vars
+	 * @return array<string,mixed>
+	 */
+	public function injectJsVars($vars = [])
+	{
+		if (!is_array($vars)) {
+			$vars = [];
+		}
+		$cats = [];
+		$counts = [];
+		try {
+			$cats = $this->store()->hiddenIds();
+			foreach ($this->categories() as $c) {
+				$counts[$c['id']] = ['name' => $c['name'], 'feeds' => $c['feeds']];
+			}
+		} catch (Throwable $e) {
+			Minz_Log::warning('HiddenCategories: could not build page payload: ' . $e->getMessage());
+		}
+		$vars['hiddenCategories'] = [
+			'cats' => $cats,
+			'mode' => $this->store()->mode(),
+			'only' => $this->store()->only(),
+			// names+counts for the hidden ones only — a hidden category with no
+			// row in this map is named by its id, never by a guess
+			'meta' => array_filter($counts, static fn ($id) => in_array($id, $cats, true), ARRAY_FILTER_USE_KEY),
+			'api' => (string)_url('extension', 'configure', 'e', urlencode($this->getName())),
+		];
+		return $vars;
 	}
 
 	/**
@@ -165,6 +212,21 @@ class HiddenCategoriesExtension extends Minz_Extension
 		return $out;
 	}
 
+	/**
+	 * One category's display name, read from FreshRSS itself. Returns null when
+	 * the category no longer exists, which is how a stale page revives a deleted
+	 * category without silently hiding a different one that reused the id.
+	 */
+	public function categoryName(int $catId): ?string
+	{
+		foreach ($this->categories() as $c) {
+			if ($c['id'] === $catId) {
+				return $c['name'];
+			}
+		}
+		return null;
+	}
+
 	/** POST handling only. Everything that must happen on ANY settings-page
 	 *  render lives in handleConfigureAction() above. */
 	private function handleConfigurePost(): void
@@ -184,6 +246,37 @@ class HiddenCategoriesExtension extends Minz_Extension
 		$act = trim($act);
 
 		switch ($act) {
+			case 'hide':
+			case 'unhide':
+				$catId = Minz_Request::paramInt('cat');
+				if ($catId <= 0) {
+					Minz_Request::bad('No category was named, so nothing changed.', $this->selfUrl());
+					return;
+				}
+				// Name comes from the database, never from the request: a posted
+				// name could label one category while hiding another.
+				$name = $this->categoryName($catId);
+				if ($name === null) {
+					Minz_Request::bad('Category ' . $catId . ' no longer exists — nothing changed.', $this->selfUrl());
+					return;
+				}
+				$result = $act === 'hide'
+					? $this->store()->hideCategory($catId, $name)
+					: $this->store()->unhideCategory($catId, $name);
+				if ($result['ok']) {
+					Minz_Request::good($result['message'], $this->selfUrl());
+				} else {
+					Minz_Request::bad($result['message'], $this->selfUrl());
+				}
+				return;
+
+			case 'only':
+				$want = Minz_Request::paramStringNull('on', true);
+				$on = $want === '1';
+				$this->store()->setOnly($on);
+				Minz_Request::good($on ? 'Showing only hidden categories.' : 'Showing everything again.', $this->selfUrl());
+				return;
+
 			case 'mode':
 				$mode = Minz_Request::paramStringNull('mode', true);
 				if ($mode === null || trim($mode) === '') {

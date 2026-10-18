@@ -1,0 +1,229 @@
+/*
+ * Hidden Categories — the hiding itself.
+ *
+ * Everything here keys off two attributes on <html> that hidden.js sets from the
+ * page payload before first paint:
+ *
+ *   html[data-hc-hidden~="2"]   category id 2 is hidden
+ *   html[data-hc-only="1"]      "show only hidden" view is on
+ *
+ * No selectors reach further than the two hooks FreshRSS already ships:
+ *   sidebar category   <li id="c_<catId>" class="tree-folder category">
+ *   stream item        <div class="flux" data-category="<catId>">
+ *
+ * If this file fails to load, everything stays visible and the page still
+ * works. If hidden.js fails to load, the attribute is never set and nothing
+ * hides. Neither case breaks the page.
+ */
+
+/* ---- sidebar: hidden categories leave the tree -------------------------
+ * These rules use the ids FreshRSS already puts on the tree
+ * (li#c_<catId>), so hiding works with NO marker pass from hidden.js — pure
+ * CSS from the attribute alone. hidden.js injects one line per hidden
+ * category into <head> (see markStyles), which is all that is needed.
+ *
+ * Everything in this file that does not depend on WHICH id is hidden lives
+ * below; the id-specific part is generated.
+ */
+
+/* a category the user hid: removed from the sidebar tree */
+html[data-hc-mode="hide"] li.tree-folder.category[data-hc-hidden="1"] {
+	display: none !important;
+}
+
+/* ---- stream: articles from hidden categories leave the list -----------
+ * Stream items already carry data-category="<id>", so the same generated rules
+ * cover them; this is the fallback for a theme that drops the attribute.
+ */
+html[data-hc-mode="hide"] .flux[data-hc-hidden="1"] {
+	display: none !important;
+}
+
+/* ---- "only hidden" view ----------------------------------------------
+ * Non-hidden categories stay clickable but recede; the stream keeps only the
+ * hidden ones. This is a view over the normal stream, not a server filter.
+ */
+html[data-hc-only="1"] li.tree-folder.category[data-hc-hidden="0"],
+html[data-hc-only="1"] li.tree-folder.category.all,
+html[data-hc-only="1"] li.tree-folder.category.important,
+html[data-hc-only="1"] li.tree-folder.category.favorites,
+html[data-hc-only="1"] li.tree-folder.category.tags {
+	opacity: 0.38;
+	transition: opacity 0.15s ease;
+}
+html[data-hc-only="1"] li.tree-folder.category[data-hc-hidden="0"]:hover,
+html[data-hc-only="1"] li.tree-folder.category.all:hover {
+	opacity: 0.75;
+}
+html[data-hc-only="1"] .flux[data-hc-hidden="0"] {
+	display: none !important;
+}
+
+/* the banner that says the stream is filtered, and gets you out */
+.hc-banner {
+	display: flex;
+	align-items: center;
+	gap: 0.6em;
+	margin: 0 0 0.6em;
+	padding: 0.45em 0.75em;
+	border-radius: 6px;
+	font-size: 0.92em;
+	background: rgba(120, 120, 120, 0.13);
+	border-left: 3px solid currentColor;
+	opacity: 0.9;
+}
+.hc-banner button {
+	margin-left: auto;
+	cursor: pointer;
+	font: inherit;
+	padding: 0.15em 0.6em;
+	border-radius: 4px;
+	border: 1px solid rgba(128, 128, 128, 0.45);
+	background: transparent;
+	color: inherit;
+}
+.hc-banner button:hover {
+	background: rgba(128, 128, 128, 0.18);
+}
+
+/* ---- the sidebar "Hidden (N)" section ---------------------------------
+ * A normal .tree-folder so themes and collapse state apply to it unchanged.
+ * Its children are categories, not feeds.
+ */
+.hc-tree .hc-item {
+	display: flex;
+	align-items: center;
+	gap: 0.35em;
+}
+.hc-tree .hc-item .hc-name {
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.hc-tree .hc-item .hc-count {
+	opacity: 0.55;
+	font-size: 0.85em;
+	white-space: nowrap;
+}
+.hc-tree .hc-unhide {
+	flex: 0 0 auto;
+	cursor: pointer;
+	line-height: 1;
+	padding: 0 0.35em;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	opacity: 0.5;
+	font-size: 1.05em;
+}
+.hc-tree .hc-unhide:hover,
+.hc-tree .hc-unhide:focus-visible {
+	opacity: 1;
+}
+.hc-chip {
+	font-size: 0.7em;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	padding: 0.05em 0.4em;
+	border-radius: 3px;
+	background: rgba(128, 128, 128, 0.22);
+	opacity: 0.85;
+	white-space: nowrap;
+}
+
+/* ---- settings page ---------------------------------------------------- */
+.hc-list {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.hc-row {
+	display: grid;
+	grid-template-columns: auto 1fr auto auto;
+	align-items: center;
+	gap: 0.75em;
+	padding: 0.4em 0.6em;
+	border-radius: 5px;
+}
+.hc-row:nth-child(even) {
+	background: rgba(128, 128, 128, 0.07);
+}
+.hc-row:hover {
+	background: rgba(128, 128, 128, 0.14);
+}
+.hc-row.hc-is-hidden .hc-name {
+	opacity: 0.65;
+	text-decoration: line-through;
+	text-decoration-thickness: 1px;
+}
+.hc-row .hc-name {
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.hc-row .hc-feeds {
+	opacity: 0.6;
+	font-size: 0.88em;
+	white-space: nowrap;
+}
+.hc-row .hc-act {
+	cursor: pointer;
+	font: inherit;
+	font-size: 0.88em;
+	padding: 0.15em 0.7em;
+	border-radius: 4px;
+	border: 1px solid rgba(128, 128, 128, 0.45);
+	background: transparent;
+	color: inherit;
+	min-width: 4.2em;
+}
+.hc-row .hc-act:hover {
+	background: rgba(128, 128, 128, 0.18);
+}
+.hc-row.hc-is-hidden .hc-act {
+	border-color: rgba(120, 175, 255, 0.6);
+}
+.hc-empty {
+	padding: 0.9em 0.6em;
+	opacity: 0.75;
+}
+.hc-group-label {
+	margin: 0.9em 0 0.25em;
+	font-size: 0.78em;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	opacity: 0.55;
+}
+.hc-details summary {
+	cursor: pointer;
+	opacity: 0.75;
+	font-size: 0.9em;
+}
+.hc-details dl {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 0.2em 1em;
+	font-size: 0.9em;
+	margin: 0.5em 0 0;
+	opacity: 0.8;
+}
+.hc-details dt {
+	opacity: 0.7;
+}
+.hc-details dd {
+	margin: 0;
+	word-break: break-all;
+}
+
+/* narrow screens: let the row wrap rather than squeeze the name */
+@media (max-width: 640px) {
+	.hc-row {
+		grid-template-columns: 1fr auto;
+		row-gap: 0.2em;
+	}
+	.hc-row .hc-feeds {
+		grid-column: 1 / 2;
+	}
+}
