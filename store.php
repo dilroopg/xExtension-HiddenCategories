@@ -169,6 +169,15 @@ final class HiddenCategoriesStore
 			note TEXT NOT NULL
 		)');
 		$this->migrateFeedSnap($pdo);
+		// The INVERSE snapshots, used only by the "only hidden" view in Strict:
+		// the original priority of every feed that view pushed down. A separate
+		// table on purpose — these are feeds we hid to make a view work, not
+		// feeds the user hid, and nothing may ever restore one as the other.
+		$pdo->exec('CREATE TABLE IF NOT EXISTS inverse_snap (
+			feed_id INTEGER PRIMARY KEY,
+			orig_priority INTEGER NOT NULL,
+			applied_at TEXT NOT NULL
+		)');
 	}
 
 	/**
@@ -789,6 +798,77 @@ final class HiddenCategoriesStore
 			: 'Saved: the sidebar row is labelled "' . $label . '".'];
 	}
 
+	// ------------------------------------------------- the "only" view (inverse)
+	//
+	// "Show only hidden" asks the server for the OPPOSITE of what Strict does:
+	// it needs the hidden feeds visible and everything else gone. FreshRSS has
+	// no per-view filter, so the only way to make this true for other clients is
+	// to push every NON-hidden feed down to "Do not show" while the view is on,
+	// and restore them when it ends.
+	//
+	// These rows live in their own table so they can never be confused with the
+	// user's hidden set: unhiding a category must not "restore" a feed that was
+	// only demoted to make a view render.
+
+	/** @return list<array{feed_id:int,orig_priority:int}> */
+	public function inverseSnapshots(): array
+	{
+		try {
+			$rows = $this->pdo()->query('SELECT feed_id, orig_priority FROM inverse_snap ORDER BY feed_id')->fetchAll();
+		} catch (Throwable $e) {
+			return [];
+		}
+		$out = [];
+		foreach ($rows as $r) {
+			$out[] = ['feed_id' => (int)$r['feed_id'], 'orig_priority' => (int)$r['orig_priority']];
+		}
+		return $out;
+	}
+
+	public function inverseOrigFor(int $feedId): ?int
+	{
+		try {
+			$st = $this->pdo()->prepare('SELECT orig_priority FROM inverse_snap WHERE feed_id = :id');
+			$st->execute([':id' => $feedId]);
+			$v = $st->fetchColumn();
+			return ($v === false || $v === null) ? null : (int)$v;
+		} catch (Throwable $e) {
+			return null;
+		}
+	}
+
+	/** Record a feed's original priority before the inverse view changes it. */
+	public function addInverseSnapshot(int $feedId, int $orig): bool
+	{
+		try {
+			$this->pdo()->prepare(
+				'INSERT OR IGNORE INTO inverse_snap (feed_id, orig_priority, applied_at)
+				 VALUES (:id, :p, :t)'
+			)->execute([':id' => $feedId, ':p' => $orig, ':t' => date('c')]);
+			return true;
+		} catch (Throwable $e) {
+			return false;
+		}
+	}
+
+	public function forgetInverseSnapshot(int $feedId): void
+	{
+		try {
+			$this->pdo()->prepare('DELETE FROM inverse_snap WHERE feed_id = :id')->execute([':id' => $feedId]);
+		} catch (Throwable $e) {
+			// retried on the next pass
+		}
+	}
+
+	public function inverseSnapshotCount(): int
+	{
+		try {
+			return (int)$this->pdo()->query('SELECT count(*) FROM inverse_snap')->fetchColumn();
+		} catch (Throwable $e) {
+			return 0;
+		}
+	}
+
 	// ---------------------------------------------------------------- reads
 
 	/** @return list<array{cat_id:int,cat_name:string,hidden_at:string}> */
@@ -856,6 +936,10 @@ final class HiddenCategoriesStore
 		}
 		// Light mode must never leave enforcement snapshots behind: if it does,
 		// a mode switch was interrupted and the restore has to finish first.
+		if ($this->view() !== 'only' && $this->inverseSnapshotCount() > 0) {
+			$problems[] = $this->inverseSnapshotCount()
+				. ' feed(s) still demoted for the "only hidden" view — leaving that view did not restore them';
+		}
 		if ($this->mode() === 'light' && $this->snapshotCount() > 0) {
 			$problems[] = 'light mode with ' . $this->snapshotCount()
 				. ' enforced feed(s) recorded — the restore was interrupted';

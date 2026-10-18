@@ -189,10 +189,19 @@ class HiddenCategoriesExtension extends Minz_Extension
 		// temporarily switch the stored mode off, sweep, and switch it back so
 		// re-enabling comes back in Strict as the user left it.
 		$mode = $this->store()->mode();
+		// Undo the "only hidden" view FIRST and unconditionally: if the user
+		// disables while in that view, hundreds of feeds are sitting at -10 and
+		// nothing else in this extension would ever bring them back.
+		$inverse = $this->exitOnlyView();
 		if ($mode === 'strict') {
 			$this->store()->setMode('light');      // makes the sweep restore-only
 		}
 		$sweep = $this->sweepFeeds();
+		if ($inverse['failed'] > 0) {
+			$sweep['ok'] = false;
+			$sweep['failed'] += $inverse['failed'];
+			$sweep['message'] = $inverse['failed'] . ' feed(s) could not be restored from the "only hidden" view';
+		}
 		if ($mode === 'strict') {
 			$this->store()->setMode($mode);        // remember it for next enable
 		}
@@ -273,6 +282,113 @@ class HiddenCategoriesExtension extends Minz_Extension
 	}
 
 	/**
+	 * The inverse pass: make "show only hidden" true for OTHER CLIENTS, not just
+	 * this browser.
+	 *
+	 * The browser view is a filter on rendered articles, which no server-side
+	 * setting can express. What a server CAN say is "this feed is not shown", so
+	 * to show only the hidden categories everywhere, every NON-hidden feed is
+	 * pushed to -10 while the view is on. Entering the view:
+	 *
+	 *   1. lift enforcement on the hidden feeds (they must be visible to render)
+	 *   2. snapshot and demote every non-hidden feed
+	 *
+	 * Leaving it (sweepFeeds) restores both sets. The regression risk this
+	 * guards against is a half-applied state, so if any write fails the pass
+	 * reports failure and the caller says so rather than claiming success.
+	 *
+	 * @return array{ok:bool,enforced:int,restored:int,skipped:int,failed:int,message:string}
+	 */
+	private function enterOnlyView(): array
+	{
+		$store = $this->store();
+		$hiddenIds = $store->hiddenIds();
+
+		// 1. the hidden feeds become visible so their articles can render
+		$lift = $this->suspendEnforcement();
+		if (!$lift['ok']) {
+			return $lift;
+		}
+
+		// 2. every other feed is demoted, with its original value recorded
+		$current = [];
+		$categoryOf = [];
+		try {
+			foreach (FreshRSS_Factory::createFeedDao()->selectAll() as $feed) {
+				$id = (int)$feed['id'];
+				$current[$id] = (int)$feed['priority'];
+				$categoryOf[$id] = (int)$feed['category'];
+			}
+		} catch (Throwable $e) {
+			return ['ok' => false, 'enforced' => 0, 'restored' => 0, 'skipped' => 0, 'failed' => 0,
+				'message' => 'could not read feeds: ' . $e->getMessage()];
+		}
+
+		$demoted = 0;
+		$skipped = 0;
+		$failed = 0;
+		foreach ($categoryOf as $feedId => $cat) {
+			if (in_array($cat, $hiddenIds, true)) {
+				continue;                     // a hidden feed stays in the view
+			}
+			$prio = $current[$feedId] ?? null;
+			if ($prio === null) {
+				continue;
+			}
+			// already recorded by a previous entry into this view: re-apply if it
+			// drifted, but never overwrite the original value
+			$orig = $store->inverseOrigFor($feedId);
+			if ($orig === null) {
+				if (!$store->addInverseSnapshot($feedId, $prio)) {
+					$failed++;
+					continue;
+				}
+				$orig = $prio;
+			}
+			if ($prio === HiddenCategoriesStore::PRIORITY_HIDDEN) {
+				$skipped++;                   // already invisible, nothing to write
+				continue;
+			}
+			if (!$this->writePriority($feedId, HiddenCategoriesStore::PRIORITY_HIDDEN)) {
+				$failed++;
+				$store->forgetInverseSnapshot($feedId);
+				continue;
+			}
+			$demoted++;
+		}
+
+		if ($failed > 0) {
+			return ['ok' => false, 'enforced' => $demoted, 'restored' => $lift['restored'],
+				'skipped' => $skipped, 'failed' => $failed,
+				'message' => $failed . ' feed(s) could not be filtered out for the view'];
+		}
+		return ['ok' => true, 'enforced' => $demoted, 'restored' => $lift['restored'],
+			'skipped' => $skipped, 'failed' => 0, 'message' => ''];
+	}
+
+	/**
+	 * Restore every feed the "only hidden" view demoted, then drop those rows.
+	 * Safe to call when there are none (the common case).
+	 *
+	 * @return array{restored:int,failed:int}
+	 */
+	private function exitOnlyView(): array
+	{
+		$store = $this->store();
+		$restored = 0;
+		$failed = 0;
+		foreach ($store->inverseSnapshots() as $snap) {
+			if (!$this->writePriority($snap['feed_id'], $snap['orig_priority'])) {
+				$failed++;
+				continue;
+			}
+			$store->forgetInverseSnapshot($snap['feed_id']);
+			$restored++;
+		}
+		return ['restored' => $restored, 'failed' => $failed];
+	}
+
+	/**
 	 * Converge the feed settings to the hidden set, and prove it.
 	 *
 	 * This is the only function that writes `priority`. Everything that can
@@ -295,6 +411,12 @@ class HiddenCategoriesExtension extends Minz_Extension
 		$hiddenIds = $store->hiddenIds();
 		if ($apply) {
 			$store->setMeta('peek_parked', '0');   // a sweep ends any peek
+			// a sweep is authoritative: any feed still demoted for the "only
+			// hidden" view is put back first, so a mode switch or a disable can
+			// never leave the inverse state behind
+			if ($store->inverseSnapshotCount() > 0 && in_array($store->getMeta('view', 'hidden'), ['hidden', 'revealed'], true)) {
+				$this->exitOnlyView();
+			}
 		}
 		$enforced = 0;
 		$restored = 0;
@@ -740,9 +862,22 @@ class HiddenCategoriesExtension extends Minz_Extension
 				// eye goes back to 'hidden'. Light has nothing to lift.
 				$sweep = ['ok' => true, 'enforced' => 0, 'restored' => 0, 'skipped' => 0, 'failed' => 0, 'message' => ''];
 				if ($this->store()->mode() === 'strict') {
-					$sweep = ($to === 'revealed' || $to === 'only')
-						? $this->suspendEnforcement()
-						: $this->sweepFeeds();
+					if ($to === 'only') {
+						// make the view true for other clients too: lift hiding on
+						// the hidden feeds, demote everything else
+						$sweep = $this->enterOnlyView();
+					} else {
+						// leaving the view: undo the inverse demotion first, or
+						// those feeds would stay invisible for the next view
+						$back = $this->exitOnlyView();
+						$sweep = ($to === 'revealed') ? $this->suspendEnforcement() : $this->sweepFeeds();
+						$sweep['restored'] += $back['restored'];
+						if ($back['failed'] > 0) {
+							$sweep['ok'] = false;
+							$sweep['failed'] += $back['failed'];
+							$sweep['message'] = $back['failed'] . ' feed(s) could not be restored after the view';
+						}
+					}
 				}
 				$detail = $this->sweepMessage($sweep);
 				Minz_Request::good(
