@@ -69,15 +69,17 @@ The eye *is* the button, and its icon shows which view you're in. Clicking cycle
 | view | sidebar | stream | feeds |
 |---|---|---|---|
 | **hidden** | hidden categories are gone | their articles are gone | hiding applied |
-| **revealed** | everything, hidden ones tagged below | hidden articles mixed in with the rest | hiding temporarily lifted |
-| **only** | everything listed, non-hidden rows fade back | **only** the hidden categories' articles | hiding temporarily lifted |
+| **revealed** | everything, hidden rows tagged `HIDDEN` | hidden articles mixed in with the rest | hiding temporarily lifted |
+| **only** | everything listed, non-hidden rows fade back, hidden rows tagged `HIDDEN` | **only** the hidden categories' articles | hiding temporarily lifted |
 
 **"Only" removes the rest, it doesn't just narrow the list** — every article from a category you
 haven't hidden disappears from the stream. In the sidebar those rows are only dimmed, so you can
 still click through to them.
 
-In the **revealed** and **only** views each hidden category in the sidebar carries a small
-`HIDDEN` label after its name, so you can tell at a glance which ones are the hidden ones:
+The `HIDDEN` tag only appears in the **revealed** and **only** views — it is never shown in the
+normal `hidden` view, because in that view the categories aren't on screen at all. In those two
+views it sits after the category's name, so you can tell at a glance which of the visible ones
+are the ones you'd hidden:
 
 ![hidden category tag](docs/hidden-tag.svg)
 
