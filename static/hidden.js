@@ -401,22 +401,24 @@
 		title.setAttribute('role', 'button');
 		title.setAttribute('aria-expanded', view === 'hidden' ? 'false' : 'true');
 		title.title = cats.length + ' hidden ' + (cats.length === 1 ? 'category' : 'categories');
-		// Two settings from the settings page:
-		//   showCount  the number of hidden categories is drawn (on by default)
-		//   rowLabel   free text in front of that number; '' = number only
-		// With the count off the row shows nothing but the caret — no number,
-		// no label — so a glance at the screen says nothing. The row stays: it
-		// is still how you expand the list, and the eye button above is
-		// unaffected. The accessible name stays descriptive either way, and so
-		// does the tooltip, so the two never disagree with the label.
-		var showCount = HC.showCount !== false;
+		// Three display states from the settings page, stored as `rowmode`:
+		//   caret   nothing but the disclosure caret
+		//   number  the count on its own
+		//   both    rowLabel text, then the count
+		// In caret mode a glance at the screen learns nothing. The row itself
+		// always stays: it is how you expand the list, and the eye button above
+		// is unaffected. The accessible name and tooltip stay descriptive in
+		// every mode, so they never disagree with what is drawn.
+		var rowMode = HC.rowMode === 'number' || HC.rowMode === 'both' ? HC.rowMode : 'caret';
 		var label = typeof HC.rowLabel === 'string' ? HC.rowLabel : 'Hidden';
+		var drawLabel = rowMode === 'both' && label !== '';
+		var drawNum = rowMode !== 'caret';
 		title.innerHTML = '<button class="dropdown-toggle" type="button" title="Expand">'
 			+ '<span class="hc-caret">&#9662;</span></button>'
-			+ (!showCount ? ''
+			+ (!drawLabel && !drawNum ? ''
 				: '<span class="title">'
-					+ (label === '' ? '' : '<span class="hc-row-label"></span>')
-					+ '<span class="hc-row-num">' + cats.length + '</span>'
+					+ (drawLabel ? '<span class="hc-row-label"></span>' : '')
+					+ (drawNum ? '<span class="hc-row-num">' + cats.length + '</span>' : '')
 					+ '</span>');
 		// the label goes in as TEXT, never as markup: it is user-typed and
 		// must not be able to inject anything into the page

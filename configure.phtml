@@ -135,16 +135,19 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 	<?php
 	$showCount = $store->showCount();
 	$rowLabel = $store->rowLabel();
+	$modeRow = $store->rowMode();
 	$hiddenN = count($hiddenRows);
-	// What the row actually reads with the saved settings. Built from the same
-	// pieces hidden.js draws, so this cannot drift from the real row.
-	$rowPreviewText = !$showCount
+	// The saved state, drawn from the same three pieces hidden.js draws, so
+	// this cannot drift from the real row.
+	$rowPreviewText = $modeRow === 'caret'
 		? ''
-		: ($rowLabel === '' ? (string)$hiddenN : $rowLabel . ' ' . $hiddenN);
-	?>
+		: ($modeRow === 'both' && $rowLabel !== ''
+			? $rowLabel . ' ' . $hiddenN
+			: (string)$hiddenN);
+?>
 	<div class="hc-lock-card">
 		<p class="hc-hint">
-			How the hidden row in the sidebar tree labels itself. Label only — nothing about
+			How the hidden row in the sidebar tree labels itself. Display only — nothing about
 			what is hidden, the eye button, or the lock.
 		</p>
 
@@ -155,7 +158,7 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 				<span class="hc-caret" aria-hidden="true">&#9662;</span>
 				<?php if ($rowPreviewText === '') { ?>
 					<span class="hc-preview-none">just the caret &nbsp;&mdash; nothing else</span>
-				<?php } elseif ($rowLabel !== '' && $showCount) { ?>
+				<?php } elseif ($modeRow === 'both' && $rowLabel !== '') { ?>
 					<span class="hc-row-label"><?= htmlspecialchars($rowLabel, ENT_QUOTES) ?></span>
 					<span class="hc-row-num"><?= $hiddenN ?></span>
 				<?php } else { ?>
@@ -165,23 +168,36 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 		</div>
 
 		<?php
-		// Both controls in ONE form with ONE Save button. Saving posts the full
-		// pair (count state + label text) so the two can never be saved out of
-		// step with each other — the old separate-form version had to guess
-		// which control was meant, and the checkbox auto-submitted with nothing
-		// on screen to confirm it.
+		// One form, one Save button, three display states. This was a checkbox
+		// (count on/off), which could not express "label but no number" — the
+		// state most people want when obscuring the row. A radio group says
+		// exactly which of the three the row is in, so there is no combination
+		// the UI can produce that the model cannot store.
+		$modes = [
+			'caret' => ['Nothing but the caret', 'the row draws no text at all'],
+			'number' => ['The number only', 'how many categories are hidden'],
+			'both' => ['Label and number', 'the label, then the number'],
+		];
 		?>
 		<form method="post" action="<?= $url ?>" id="hidden-categories-display-form">
 			<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
 			<input type="hidden" name="act" value="display" />
 
-			<label class="hc-switch hc-switch-block">
-				<input type="checkbox" name="count" value="1" <?= $showCount ? 'checked' : '' ?> data-hc-count />
-				<span>Show how many categories are hidden</span>
-			</label>
+			<div class="hc-modes" role="radiogroup" aria-label="What the sidebar row shows">
+				<?php foreach ($modes as $val => [$title, $sub]) { ?>
+					<label class="hc-mode-radio">
+						<input type="radio" name="rowmode" value="<?= $val ?>"
+							<?= $modeRow === $val ? 'checked' : '' ?> data-hc-rowmode />
+						<span>
+							<strong><?= $title ?></strong>
+							<em><?= $sub ?></em>
+						</span>
+					</label>
+				<?php } ?>
+			</div>
 
 			<label class="hc-label-field">
-				<span>Label in front of the number</span>
+				<span>Label text (used by "Label and number")</span>
 				<input type="text" name="label" class="hc-label-input"
 					value="<?= htmlspecialchars($rowLabel, ENT_QUOTES) ?>"
 					placeholder="leave empty for the number on its own"
@@ -198,16 +214,14 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 			<span class="hc-live-cap">After saving</span>
 			<span class="hc-preview-row" data-hc-live>
 				<span class="hc-caret" aria-hidden="true">&#9662;</span>
-				<?php if ($rowLabel !== '' && $showCount) { ?>
+				<?php if ($modeRow === 'both') { ?>
 					<span class="hc-row-label"><?= htmlspecialchars($rowLabel, ENT_QUOTES) ?></span>
 					<span class="hc-row-num"><?= $hiddenN ?></span>
-				<?php } else { ?>
-					<span class="hc-row-num"><?= $showCount ? $hiddenN : '' ?></span>
+				<?php } elseif ($modeRow === 'number') { ?>
+					<span class="hc-row-num"><?= $hiddenN ?></span>
 				<?php } ?>
 			</span>
-			<span class="hc-live-msg" data-hc-live-msg>
-				<?= $rowLabel === '' ? 'unchanged — showing the number alone' : 'unchanged' ?>
-			</span>
+			<span class="hc-live-msg" data-hc-live-msg>unchanged</span>
 		</div>
 	</div>
 

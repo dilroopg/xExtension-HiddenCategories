@@ -66,19 +66,18 @@
 		var form = document.getElementById('hidden-categories-display-form');
 		if (!form) { return; }
 		var input = form.querySelector('[data-hc-label]');
-		var box = form.querySelector('[data-hc-count]');
 		var live = root.querySelector('[data-hc-live]');
 		var msg = root.querySelector('[data-hc-live-msg]');
 		var dirty = root.querySelector('[data-hc-dirty]');
-		if (!input || !box || !live || !msg) { return; }
+		if (!input || !live || !msg) { return; }
 
 		// the real hidden count, taken from the saved row so this cannot drift
 		var num = root.querySelector('.hc-preview .hc-row-num');
 		var count = num ? num.textContent : '';
 
 		// the saved state, captured once from the server-rendered form
+		var savedMode = (form.querySelector('[data-hc-rowmode]:checked') || {}).value || 'caret';
 		var savedLabel = input.value.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
-		var savedCount = box.defaultChecked;
 
 		function esc(s) {
 			return String(s).replace(/[&<>"']/g, function (c) {
@@ -86,29 +85,32 @@
 			});
 		}
 
+		function currentMode() {
+			var picked = form.querySelector('[data-hc-rowmode]:checked');
+			return picked ? picked.value : 'caret';
+		}
+
 		function render() {
 			var label = input.value.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+			var mode = currentMode();
 			var caret = '<span class="hc-caret" aria-hidden="true">&#9662;</span>';
-			var changed = (label !== savedLabel) || (box.checked !== savedCount);
+			var changed = (label !== savedLabel) || (mode !== savedMode);
 
-			if (!box.checked) {
+			if (mode === 'caret') {
 				live.innerHTML = caret;
-			} else if (label === '') {
+				msg.textContent = 'the row will show the caret only';
+			} else if (mode === 'number' || label === '') {
+				// "Label and number" with an empty label degrades to the number,
+				// which is exactly what the placeholder promises
 				live.innerHTML = caret + '<span class="hc-row-num">' + esc(count) + '</span>';
+				msg.textContent = (mode === 'both')
+					? 'label is empty — will show the number on its own'
+					: (changed ? 'preview of your unsaved changes' : 'unchanged');
 			} else {
 				live.innerHTML = caret
 					+ '<span class="hc-row-label">' + esc(label) + '</span>'
 					+ '<span class="hc-row-num">' + esc(count) + '</span>';
-			}
-
-			if (!box.checked) {
-				msg.textContent = 'the row will show the caret only';
-			} else if (label === '' && !changed) {
-				msg.textContent = 'unchanged — showing the number alone';
-			} else if (!changed) {
-				msg.textContent = 'unchanged';
-			} else {
-				msg.textContent = 'preview of your unsaved changes';
+				msg.textContent = changed ? 'preview of your unsaved changes' : 'unchanged';
 			}
 
 			if (dirty) {
@@ -117,7 +119,10 @@
 		}
 
 		input.addEventListener('input', render);
-		box.addEventListener('change', render);
+		var radios = form.querySelectorAll('[data-hc-rowmode]');
+		for (var i = 0; i < radios.length; i++) {
+			radios[i].addEventListener('change', render);
+		}
 		render();
 	}
 

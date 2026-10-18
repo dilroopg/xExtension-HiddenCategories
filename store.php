@@ -693,10 +693,39 @@ final class HiddenCategoriesStore
 	// default through getMeta's fallback, so an install that predates these
 	// keys looks unchanged until the user changes something.
 
+	/**
+	 * What the sidebar row draws. Three values, stored under `rowmode`:
+	 *
+	 *   caret   nothing but the disclosure caret — no label, no number
+	 *   number  the count on its own
+	 *   both    the label, then the count
+	 *
+	 * Stored explicitly rather than derived from two flags, because "label but
+	 * no number" is a state the user actually asked for and a (bool, bool)
+	 * pair cannot express it. An old install that only has show_count /
+	 * row_label is migrated on read by rowMode() below.
+	 */
+	public const ROW_MODES = ['caret', 'number', 'both'];
+
+	public function rowMode(): string
+	{
+		$m = $this->getMeta('rowmode', '');
+		if (in_array($m, self::ROW_MODES, true)) {
+			return $m;
+		}
+		// migrate the pre-1.4.3 pair: show_count gates everything, and a
+		// non-empty label means the row had text next to the number
+		$count = $this->getMeta('show_count', '1') === '1';
+		if (!$count) {
+			return 'caret';
+		}
+		return $this->rowLabel() === '' ? 'number' : 'both';
+	}
+
 	/** Draw the number of hidden categories in the sidebar row. */
 	public function showCount(): bool
 	{
-		return $this->getMeta('show_count', '1') === '1';
+		return $this->rowMode() !== 'caret';
 	}
 
 	/**
@@ -711,14 +740,28 @@ final class HiddenCategoriesStore
 	}
 
 	/** @return array{ok:bool,message:string} */
-	public function setShowCount(bool $on): array
+	public function setRowMode(string $mode): array
 	{
-		if (!$this->setMeta('show_count', $on ? '1' : '0')) {
+		if (!in_array($mode, self::ROW_MODES, true)) {
+			return ['ok' => false, 'message' => 'Refused: "' . $mode . '" is not a row display option.'];
+		}
+		// keep show_count in step so an older build reading this file still
+		// sees the right on/off, rather than disagreeing about "is it drawn"
+		if (!$this->setMeta('rowmode', $mode)) {
 			return ['ok' => false, 'message' => 'Could not save the display option.'];
 		}
-		return ['ok' => true, 'message' => $on
-			? 'The sidebar row shows how many categories are hidden.'
-			: 'The sidebar row no longer shows how many categories are hidden.'];
+		$this->setMeta('show_count', $mode === 'caret' ? '0' : '1');
+		return ['ok' => true, 'message' => 'Display option saved.'];
+	}
+
+	/** @return array{ok:bool,message:string} */
+	public function setShowCount(bool $on): array
+	{
+		// legacy entry point: on/off maps onto the three modes
+		if (!$on) {
+			return $this->setRowMode('caret');
+		}
+		return $this->setRowMode($this->rowLabel() === '' ? 'number' : 'both');
 	}
 
 	/**

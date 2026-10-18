@@ -111,6 +111,7 @@ class HiddenCategoriesExtension extends Minz_Extension
 			// changes what is hidden or enforced, so they are safe to send to
 			// the page even while locked.
 			'showCount' => $this->store()->showCount(),
+			'rowMode' => $this->store()->rowMode(),
 			'rowLabel' => $this->store()->rowLabel(),
 			// names+counts for the hidden ones only — a hidden category with no
 			// row in this map is named by its id, never by a guess
@@ -780,35 +781,33 @@ class HiddenCategoriesExtension extends Minz_Extension
 			 * disagree. Safe to press repeatedly.
 			 */
 			case 'display':
-				// The sidebar row's two settings, saved together from one form
-				// and one Save button. Both are posted every time: an unchecked
-				// box sends no `count`, and an emptied field sends `label` as
-				// empty, so this handler reads the full desired state rather
-				// than guessing which control was touched.
+				// The sidebar row's display state, saved from one form with one
+				// Save button: a rowmode (caret / number / both) plus the label
+				// text. Both are posted every time, so the handler reads the
+				// full desired state instead of guessing which control moved.
+				$mode = Minz_Request::paramStringNull('rowmode', true);
 				$label = Minz_Request::paramStringNull('label', true);
-				if ($label === null) {
+				if ($mode === null || $label === null) {
 					Minz_Request::bad('Save failed: the form was incomplete, so nothing was changed.', $this->selfUrl());
 					return;
 				}
-				$countOn = Minz_Request::paramStringNull('count', true) === '1';
-
-				$rc = $this->store()->setShowCount($countOn);
-				if (!$rc['ok']) {
-					Minz_Request::bad($rc['message'], $this->selfUrl());
-					return;
-				}
+				// The label is stored even in caret mode, so switching back to
+				// "Label and number" does not lose what was typed.
 				$rl = $this->store()->setRowLabel($label);
 				if (!$rl['ok']) {
 					Minz_Request::bad($rl['message'], $this->selfUrl());
 					return;
 				}
-				// Name the resulting row in the message, so the confirmation
-				// says what changed rather than just "saved".
-				$now = !$countOn
-					? 'the caret only'
-					: ($this->store()->rowLabel() === ''
-						? 'the number on its own'
-						: '"' . $this->store()->rowLabel() . '" and the number');
+				$rm = $this->store()->setRowMode(trim($mode));
+				if (!$rm['ok']) {
+					Minz_Request::bad($rm['message'], $this->selfUrl());
+					return;
+				}
+				$now = [
+					'caret' => 'the caret only',
+					'number' => 'the number on its own',
+					'both' => '"' . $this->store()->rowLabel() . '" and the number',
+				][$this->store()->rowMode()] ?? 'nothing';
 				Minz_Request::good('Saved: the sidebar row shows ' . $now . '.', $this->selfUrl());
 				return;
 

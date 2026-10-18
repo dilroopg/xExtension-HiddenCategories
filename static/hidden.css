@@ -385,7 +385,39 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	color: #d9a13b;
 }
 
-/* the label field: caption above, input beside the Save bar */
+/* the three display states, as a radio list */
+.hc-modes {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3em;
+	margin: 0.4em 0 0.6em;
+}
+.hc-mode-radio {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5em;
+	cursor: pointer;
+	padding: 0.3em 0.45em;
+	border-radius: 5px;
+	border: 1px solid transparent;
+}
+.hc-mode-radio:hover {
+	background: rgba(128, 128, 128, 0.1);
+}
+.hc-mode-radio:has(input:checked) {
+	border-color: rgba(92, 196, 106, 0.5);
+	background: rgba(92, 196, 106, 0.08);
+}
+.hc-mode-radio > span {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.3;
+}
+.hc-mode-radio em {
+	font-style: normal;
+	font-size: 0.85em;
+	opacity: 0.65;
+}
 .hc-label-field {
 	display: inline-flex;
 	flex-direction: column;

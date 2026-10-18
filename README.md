@@ -85,19 +85,23 @@ are the ones you'd hidden:
 
 Clicking again from `only` returns you to `hidden`, which re-applies the hiding.
 
-The row at the bottom of the sidebar shows **how many categories are hidden**, labelled
-`Hidden 7` by default, and under **Sidebar** in the settings you can change both parts:
+The row at the bottom of the sidebar labels itself with one of three display states, picked under
+**Sidebar** in the settings:
 
-| setting | what it does |
+| state | the row shows |
 |---|---|
-| **Show how many categories are hidden** (on by default) | off — the row draws nothing but the caret: no number, no label |
-| **Label in front of the number** (default `Hidden`) | type any text, or clear it to show the number on its own |
+| **Nothing but the caret** | no text at all — the row is just its disclosure arrow |
+| **The number only** | `7` |
+| **Label and number** | `Not Seen 7` (default label is `Hidden`) |
 
-Both settings save with **one Save button** and give the same feedback: **After saving** updates as
-you tick the box or type, and an "Unsaved changes" line appears until you commit. Neither setting
-changes what is hidden, what Strict enforces, or the eye button — they only change this row's text.
-The row itself always stays: it's how you open the list, and the full text is in its tooltip. With
-the count switched off, someone glancing at the screen learns nothing from it.
+The label under **Label text** is used by the third state and is kept when you switch away from it,
+so moving between states never loses what you typed. An empty label in the third state falls back
+to the number alone.
+
+All three save with **one Save button** and give the same feedback: **After saving** updates as you
+pick a state or type, and an "Unsaved changes" line stays until you commit. Nothing here changes
+what is hidden, what Strict enforces, or the eye button — the row itself always stays, because it's
+how you open the list. With the first state, someone glancing at the screen learns nothing from it.
 
 ## What "private" covers — and what it doesn't
 
