@@ -188,6 +188,25 @@ switches), `hidden_cat` (which categories are hidden) and `feed_snap` (the Visib
 recorded so they can be restored). Deleting the extension folder leaves the file alone; delete the
 file itself to forget everything.
 
+## Changelog
+
+**1.4.3** — the sidebar row's three display states, including label-only.
+
+- The on/off "show the count" checkbox is replaced by a three-option choice: **nothing but the
+  caret**, **the number only**, or **label and number**. The checkbox could not express "label but
+  no number", which is the state that actually obscures the row.
+- The label under **Label text** is kept when you switch to another state, so moving to caret-only
+  and back does not lose it. An empty label in the third state falls back to the number alone.
+- The display state is stored explicitly (`rowmode`) instead of being inferred from two flags.
+  Existing settings are migrated automatically on read; nothing is lost.
+- 1.4.2 and 1.4.1 are folded in: the label is free text (it was an on/off prefix switch), and both
+  settings save with one **Save** button, a live **After saving** preview, and an
+  "Unsaved changes" line.
+
+**1.3.5** — the `HIDDEN` tag gained a note on when it appears; the tag illustration was redrawn.
+
+Earlier versions are on the [releases page](https://github.com/dilroopg/xExtension-HiddenCategories/releases).
+
 ## Troubleshooting
 
 **Hiding does nothing on my phone.** You're in Light mode — switch to Strict.
