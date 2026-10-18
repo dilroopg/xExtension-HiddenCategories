@@ -462,7 +462,10 @@ class HiddenCategoriesExtension extends Minz_Extension
 			// Peeking intentionally leaves the feeds visible while keeping the
 			// snapshots. Re-hiding them here would undo the peek on the very
 			// next page load.
-			if ($store->getMeta('peek_parked', '0') === '1' && $store->view() === 'revealed') {
+			// Both 'revealed' and 'only' park the snapshots deliberately; the
+			// feeds must stay visible for those views to render anything.
+			$parkedView = in_array($store->view(), ['revealed', 'only'], true);
+			if ($store->getMeta('peek_parked', '0') === '1' && $parkedView) {
 				return;
 			}
 			if ($store->getMeta('peek_parked', '0') === '1') {
@@ -723,15 +726,18 @@ class HiddenCategoriesExtension extends Minz_Extension
 					Minz_Request::bad('Could not save the view: nothing was changed.', $this->selfUrl());
 					return;
 				}
-				// PEEKING in Strict must actually lift the hiding, or there is
-				// nothing to mix: at priority -10 the server never sends those
-				// articles, so the stream could only ever show an empty category.
-				// Suspending enforcement restores them to their original value;
-				// leaving 'revealed' enforces them again. Light has nothing to
-				// lift, so this is a no-op there.
-				$sweep = $this->store()->mode() === 'strict'
-					? ($to === 'revealed' ? $this->suspendEnforcement() : $this->sweepFeeds())
-					: ['ok' => true, 'enforced' => 0, 'restored' => 0, 'skipped' => 0, 'failed' => 0, 'message' => ''];
+				// PEEKING and ONLY-HIDDEN both need the feeds to exist in the page.
+				// In Strict a hidden feed sits at -10 and the server never sends
+				// its articles, so both states would render empty: 'only' filters
+				// down to nothing, which reads as a broken greyed-out view.
+				// So enforcement is suspended for BOTH; it is re-applied when the
+				// eye goes back to 'hidden'. Light has nothing to lift.
+				$sweep = ['ok' => true, 'enforced' => 0, 'restored' => 0, 'skipped' => 0, 'failed' => 0, 'message' => ''];
+				if ($this->store()->mode() === 'strict') {
+					$sweep = ($to === 'revealed' || $to === 'only')
+						? $this->suspendEnforcement()
+						: $this->sweepFeeds();
+				}
 				$detail = $this->sweepMessage($sweep);
 				Minz_Request::good(
 					($to === 'only' ? 'Showing only hidden categories.'
