@@ -71,31 +71,9 @@ whole backlog back.
 
 The eye *is* the button, and its icon shows which view you're in. Clicking cycles:
 
-<table>
-<tr>
-<td align="center" width="33%">
-
-<img alt="closed eye" src="docs/eye-hidden.svg">
-
-**hidden**
-
-</td>
-<td align="center" width="33%">
-
-<img alt="peeking eye" src="docs/eye-revealed.svg">
-
-**revealed**
-
-</td>
-<td align="center" width="33%">
-
-<img alt="open eye" src="docs/eye-only.svg">
-
-**only**
-
-</td>
-</tr>
-</table>
+| ![closed eye](docs/eye-hidden.svg) | ![peeking eye](docs/eye-revealed.svg) | ![open eye](docs/eye-only.svg) |
+|---|---|---|
+| **hidden** — what you hid is gone | **revealed** — everything, hidden ones marked | **only** — just the hidden ones |
 
 | view | sidebar | stream | feeds |
 |---|---|---|---|
@@ -110,9 +88,7 @@ still click through to them.
 In the **revealed** and **only** views each hidden category in the sidebar carries a small
 `HIDDEN` label after its name, so you can tell at a glance which ones are the hidden ones:
 
-<p>
-<img alt="hidden category tag" src="docs/hidden-tag.svg">
-</p>
+![hidden category tag](docs/hidden-tag.svg)
 
 Clicking again from `only` returns you to `hidden`, which re-applies the hiding.
 
@@ -146,9 +122,7 @@ For one situation: you've hidden something, someone walks up to your unlocked co
 don't want them clicking the eye. Set a passcode in the settings and a red lock button appears
 beside the eye:
 
-<p>
-<img alt="red lock button" src="docs/lock-button.svg">
-</p>
+![red lock button](docs/lock-button.svg)
 
 It is **deliberately weak**, and that's a choice, not an oversight — stored in **plain text** and
 shown in plain text in the settings, with **no attempt limit or lockout**. Anyone who can read the
