@@ -1,0 +1,8 @@
+{
+	"name": "Hidden Categories",
+	"author": "local",
+	"description": "Keep a set of categories out of your way. Light mode filters in the browser and writes nothing; Strict mode applies FreshRSS's own \"only show in this category\" setting to the feeds, snapshotting the previous value so it can be put back exactly. Enabling and disabling the extension leaves your feeds untouched.",
+	"version": "0.1.0",
+	"entrypoint": "HiddenCategories",
+	"type": "user"
+}

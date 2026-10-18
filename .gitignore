@@ -1,0 +1,13 @@
+# the extension's own runtime state must never be committed
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite.corrupt-*
+
+# editor / OS noise
+.DS_Store
+Thumbs.db
+*~
+*.swp
+.idea/
+.vscode/
