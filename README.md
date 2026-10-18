@@ -1,262 +1,215 @@
 # Hidden Categories
 
-Keep parts of your feed reading private. Hide categories you don't want on screen — and bring
-them back in one click.
+**No creeping on your hidden feeds.** Hide categories from FreshRSS so they aren't on screen —
+no sidebar entry, no articles in your main stream — and bring them back in one click.
 
-**No creeping on your hidden feeds.** This is aimed at screen lurkers: someone at the next desk,
-a person walking past, a friend picking up your phone. The category stays in your FreshRSS and
-keeps updating, but it drops off your main stream and out of the sidebar, so there is nothing on
-screen for them to read. In Strict mode it also drops off your phone and every other synced app.
-One click brings it back when you're alone.
+This is aimed at screen lurkers: someone at the next desk, a person walking past, a friend
+picking up your phone. The category stays in your FreshRSS and keeps updating; it just isn't
+visible. In Strict mode it also disappears from your phone and every synced reader app.
 
-FreshRSS has no "hide a category" switch. The usual workarounds are to unfollow the feeds (and
-lose them) or to collapse the folder (which still floods the main stream). This adds the missing
-switch: pick the categories you don't want visible, and the install behaves as if they aren't
-there.
+FreshRSS has no "hide a category" switch — the usual workarounds are to unsubscribe (and lose the
+feeds) or collapse the folder (which still floods the main stream). This adds the missing switch.
 
 Nothing is deleted, renamed or moved, and no subscription is ever touched.
 
-### What "private" does and does not mean here
-
-Read this before relying on it.
-
-**What it does hide:** the category and its articles, from the sidebar, the main stream, and (in
-Strict) from the FreshRSS API — so phone apps and reader apps don't show them either. The
-sidebar count is a bare number with no wording, so a glance at the screen doesn't advertise that
-anything is hidden. That is the core of it; the optional passcode is a small extra on top.
-
-**What it does not hide:**
-
-- **Nothing is encrypted.** The feeds, the category name and the articles are all still there in
-  your database, readable to anyone with access to the server or your database file.
-- **Someone logged into your FreshRSS can still find everything.** *Subscription management* is a
-  stock FreshRSS page that lists every feed and category, and it is not affected. Neither is a
-  search for a term in a hidden article while Strict is off, nor the category's own page once
-  unhidden.
-- **The passcode is a speed bump, not a lock on the data.** It's stored and displayed in plain
-  text and has no attempt limit — see [Optional passcode](#optional-passcode).
-- **Light mode is browser-only.** It filters what *this browser* draws; a phone or another
-  browser still shows everything.
-
-If you need the content itself kept from someone with server or database access, this is not
-that tool — that needs encryption at rest, which no FreshRSS extension provides.
-
 ## Install
 
-**Option 1 — git clone** (gets updates with `git pull`):
+**Option 1 — git clone** (updates with `git pull`):
 
 ```sh
 cd /path/to/FreshRSS/extensions
 git clone https://github.com/dilroopg/xExtension-HiddenCategories.git
 ```
 
-**Option 2 — download the zip**, for servers without git or if you'd rather not clone:
+**Option 2 — the release zip** (no git needed): download
+`xExtension-HiddenCategories.zip` from the
+[latest release](https://github.com/dilroopg/xExtension-HiddenCategories/releases/latest) and
+unpack it in `FreshRSS/extensions/`. It contains one folder, `xExtension-HiddenCategories/` —
+leave the folder intact. Unpacking a newer zip over the top updates it and leaves your settings
+alone.
 
-1. Grab `xExtension-HiddenCategories.zip` from the
-   [latest release](https://github.com/dilroopg/xExtension-HiddenCategories/releases/latest).
-2. Unpack it inside `FreshRSS/extensions/`. It contains a single
-   `xExtension-HiddenCategories/` folder — leave that folder intact rather than copying its
-   contents loose into `extensions/`.
-3. To update later, unpack a newer zip over the top of the folder. Your settings and hidden set
-   live outside it (see [Data it stores](#data-it-stores)) and are left untouched.
+Running FreshRSS in Docker? The official `freshrss/freshrss` image has **no `unzip`**, so extract
+on the host and copy the folder in, or run `unzip` from inside using the image's PHP:
 
-Then: **Settings → Extensions → Hidden Categories → enable**.
+```sh
+unzip xExtension-HiddenCategories.zip -d .
+docker cp xExtension-HiddenCategories freshrss:/var/www/FreshRSS/extensions/
+```
 
-The directory must be named `xExtension-HiddenCategories`; FreshRSS resolves the class by
-directory name. No build step, no config file, no other extension required.
+Then open **Settings → Extensions → Hidden Categories → enable**.
 
-Requires **FreshRSS 1.28.0 or newer** (it uses `Minz_HookType::JsVars`, which doesn't exist in
-older releases). Tested on FreshRSS 1.30.1 / PHP 8.4.
+**Requirements:** FreshRSS 1.28.0 or newer. Nothing else — no build step, no config file, no other
+extension. Tested on FreshRSS 1.30.1 / PHP 8.4, on a live ~1000-feed install and on a blank one.
 
 ## Quick start
 
-1. Hide a category — right-click it in the sidebar → **Hide category**, use the `Hide` button
-   next to each category under **Subscription management**, or the list in the extension's
-   settings.
-2. A button with a green eye appears above the sidebar. It cycles three views.
-3. To get everything back, unhide the category — or use **Restore everything now** in the
-   settings.
+1. Click **Hide** next to a category — in the extension's settings, on the category box under
+   **Subscription management**, or by right-clicking it in the sidebar (that one needs the
+   optional [RightClickActions](#optional-right-click-menu) extension).
+2. A button with a green eye appears above the sidebar. Click it to cycle through three views.
+3. To get everything back: unhide the category, or press **Restore everything now**.
 
-## Choose your mode first
+## Pick a mode
 
-Two modes. Which one you want depends on one question: **should your phone and reader apps see
-the hidden categories too?**
+One question decides it: **should your phone and reader apps see the hidden categories too?**
 
-| you want | use | what it does to your feeds |
-|---|---|---|
-| Hiding in this browser only. Zero risk, instantly reversible. | **Light** (default) | writes nothing at all |
-| Hiding everywhere, including phone apps and reader apps. | **Strict** | sets FreshRSS's per-feed Visibility, records the old value, restores it later |
-
-Switch with **Mode** on the extension settings page. Switching back to Light undoes every change
-Strict made.
-
-| | Light | Strict |
+| | **Light** (default) | **Strict** |
 |---|---|---|
 | main stream in your browser | filtered | filtered |
-| phone / reader app / API | still sees everything | **hidden** |
-| the category's own page | still shows its feeds | **empty until you unhide** |
-| writes to your feeds | none | Visibility per feed, recorded and restorable |
+| phone, reader app, API | still show everything | **hidden** |
+| the category's own page | still shows its feeds | **empty until you unhide it** |
+| what it writes | nothing at all | FreshRSS's per-feed Visibility, old value saved and restored later |
+| speed when hiding | instant | a burst at the click (see [costs](#what-it-costs)) |
 
-Hiding does **not** stop fetching. Entries keep arriving and still count as unread; unhiding
-brings the whole backlog back.
+Set it under **Mode** in the extension settings. Switching back to Light undoes everything Strict
+did.
 
-## The eye button
+Hiding never stops fetching. Entries keep arriving and still count as unread; unhiding brings the
+whole backlog back.
 
-Once something is hidden, one button above the sidebar cycles three views. The eye *is* the
-button; its icon tells you which view you're in. It is green. The red lock button beside it is
-described [below](#optional-passcode).
+## The green eye
 
-| eye | view | sidebar | stream | feeds |
-|---|---|---|---|---|
-| closed (dim green) | **hidden** | hidden categories are gone | their articles are gone | hiding applied |
-| peeking (green) | **revealed** | everything, hidden ones tagged `HIDDEN` | hidden articles mixed in with the rest | hiding temporarily lifted |
-| open (green) | **only** | everything stays listed, non-hidden rows fade back | **only** hidden categories' articles — non-hidden categories are removed from the stream | hiding temporarily lifted |
+The eye *is* the button, and its icon shows which view you're in. Clicking cycles:
 
-Be precise about **only**: it doesn't merely narrow the list, it **removes every article from a
-category you have not hidden** — in both Light and Strict. In the sidebar those rows are only
-dimmed, not removed, so you can still click through to a visible category.
+| eye | view | sidebar | stream |
+|---|---|---|---|
+| closed | **hidden** | hidden categories are gone | their articles are gone |
+| peeking | **revealed** | everything, hidden ones tagged `HIDDEN` | hidden articles mixed in with the rest |
+| open | **only** | everything listed, non-hidden rows fade back | **only** the hidden categories' articles |
+
+**"Only" removes the rest, it doesn't just narrow the list** — every article from a category you
+haven't hidden disappears from the stream. In the sidebar those rows are only dimmed, so you can
+still click through to them.
 
 Clicking again from `only` returns you to `hidden`, which re-applies the hiding.
 
-The row at the bottom of the sidebar shows **just the number** of hidden categories, not the word
-"hidden" — someone glancing at your screen shouldn't be told there's anything to find. The full
-wording is in the row's tooltip; click it to open the list.
+The row at the bottom of the sidebar shows **just a number** — how many categories are hidden, with
+no wording. Someone glancing at the screen isn't told there's anything to find. The full text is in
+the row's tooltip; click it to open the list.
+
+## What "private" covers — and what it doesn't
+
+Worth reading once, so you know what you're relying on.
+
+**It does:** keep the category and its articles off your screen — out of the sidebar and main
+stream, and in Strict out of the API that your phone and reader apps talk to.
+
+**It doesn't:**
+
+- **Encrypt anything.** The feeds, category names and articles are all still in your database,
+  readable by anyone with access to the server or the database file.
+- **Stop someone logged into FreshRSS.** *Subscription management* is a standard FreshRSS page that
+  lists every feed and category, and it's unaffected. So is the category's own page once unhidden.
+- **Protect you in Light mode on other devices.** Light filters this browser only; a phone or
+  another browser still shows everything.
+- **Provide real password security.** The optional passcode below is a speed bump, not a lock.
+
+If you need the content itself kept from someone with server access, this isn't the tool for it —
+that needs encryption at rest, which no FreshRSS extension provides.
 
 ## Optional passcode
 
-The passcode is a **speed bump, not security**. It exists for one situation: you've hidden
-categories, someone walks up to your unlocked computer, and you don't want them clicking the eye
-and seeing what you hid.
+For one situation: you've hidden something, someone walks up to your unlocked computer, and you
+don't want them clicking the eye. Set a passcode in the settings and a red lock button appears
+beside the eye.
 
-It is deliberately weak, and that's a design choice rather than an oversight:
+It is **deliberately weak**, and that's a choice, not an oversight — stored in **plain text** and
+shown in plain text in the settings, with **no attempt limit or lockout**. Anyone who can read the
+database file can read it, and guessing isn't slowed down. It guards only this extension's own
+controls: it doesn't touch FreshRSS login and doesn't hide anything from *Subscription management*.
 
-- **Stored in plain text.** Not hashed, not encrypted. Anyone who can read the SQLite file can
-  read the passcode.
-- **Displayed in plain text** in the extension settings, so you can always see it.
-- **You can change or remove it without knowing the current one** — Settings → the lock card.
-  You cannot lock yourself out.
-- **No attempt limit, no lockout, no cooldown, no timeout.** Nothing slows repeated guessing.
-- **It guards only this extension's controls** — the eye button and the count row. It doesn't
-  touch FreshRSS login, and it doesn't hide anything from *Subscription management*, a stock
-  FreshRSS page that always lists every feed.
-- **Unlock lasts for the session** — per browser, cleared at logout. Locking again is one click.
+Convenient, though: you can always see it, change it, or remove it **without knowing the current
+one**, so you can't lock yourself out. Unlock lasts for your browser session; locking again is one
+click. Locking hides the eye and the count row but changes nothing about your feeds — the hiding
+stays applied throughout.
 
-Locking replaces the eye with a passcode field and hides the count row. It does **not** change
-which view you were in, and it writes nothing to your feeds — the hiding stays applied the whole
-time. Unlock and you're back where you left. Clear the passcode field to remove the lock.
-
-If you want real protection, use FreshRSS's own authentication. This is a curtain, not a door.
+If you want actual security, use FreshRSS's own authentication. This is a curtain, not a door.
 
 ## What it costs
 
-Hiding isn't free in Strict, and peeking isn't free when Strict is on. Figures measured on an
-install with about 1000 feeds.
+Measured on an install with about 1000 feeds. All cost is at the moment you click — page loads
+stay at normal speed, and nothing runs in the background (no cron, no external service, no network
+calls).
 
-- **Hiding or unhiding a category in Strict** writes FreshRSS's Visibility setting for every feed
-  in it: **188 feeds in ~1.4 s**, **864 feeds in ~3 s**. A burst at the moment you click, not a
-  per-page cost — page loads stay at normal speed.
-- **Peeking and only-hidden are the expensive views**, not the cheap ones. In Strict a hidden feed
-  sits at *Do not show*, where the server sends none of its articles at all, so showing them
-  means lifting that setting for every feed first: **~2.6–3 s each way** for 864 feeds. In Light
-  these views are instant.
-- **While peeking or in only-hidden, those feeds are genuinely visible to every synced client,
-  phone included.** That's how the views work — the hiding is temporarily off. Closing the eye
-  hides them again.
-- **Hidden feeds keep being fetched.** Hiding changes what's displayed, never what's downloaded,
-  so unread counts can climb for categories you can't see.
-- **Nothing runs in the background.** No cron job, no external service, no network calls. Cost
-  happens when you click, and nowhere else.
+- **Hiding or unhiding in Strict** writes FreshRSS's Visibility setting for every feed in the
+  category: **188 feeds ≈ 1.4 s**, **864 feeds ≈ 3 s**.
+- **The peeking and only views are the expensive ones.** In Strict a hidden feed is marked *Do not
+  show*, so the server doesn't send its articles at all — showing them means lifting that for every
+  feed first: **≈ 2.6–3 s each way** for 864 feeds. In Light these views are instant.
+- **While in those two views, your feeds really are visible to every synced client**, phone
+  included. That's the only way to show them. Closing the eye hides them again.
+- **Hidden feeds keep downloading.** Hiding changes what's displayed, never what's fetched, so
+  unread counts can climb for categories you can't see.
 
 ## Getting everything back
 
-- **Unhide one category** — `Show` in the settings list, the `Hide`/`Show` button under
-  Subscription management, or right-click → *Show category*.
-- **Restore everything now** — a button in the settings. Unhides every category and returns every
-  feed to its recorded value.
-- **Disable the extension** — it runs the same restore first, then disables itself. If the restore
-  can't complete, the disable is **refused** and the extension stays enabled with its settings
-  page reachable, so you can never end up with hidden feeds and no way to reach the control.
+- **One category** — `Show` in the settings list, the button under Subscription management, or
+  right-click → *Show category*.
+- **Everything at once** — **Restore everything now** in the settings. Unhides every category and
+  returns every feed to its recorded value.
+- **Disable the extension** — it restores first, then disables. If the restore can't complete the
+  disable is **refused** and the extension stays enabled with its settings reachable, so you can't
+  end up with hidden feeds and no way back.
 
-Your settings (view, hidden set, mode, passcode) are kept and come back when you re-enable.
-Re-enabling in Strict re-applies the hiding automatically, so it never returns claiming to hide
-things that are actually visible.
+Your settings, hidden set, mode and passcode are kept when you disable, and come back when you
+re-enable — where Strict re-applies the hiding automatically, so it never claims to hide things
+that are actually visible.
 
 ## What it writes
 
-In **Light**: nothing. Everything it stores lives in its own SQLite file under
-`data/users/<user>/extensions/HiddenCategories/`.
+**Light:** nothing. Everything it stores lives in its own SQLite file —
+`data/users/<your user>/extensions/HiddenCategories/state.sqlite` (your FreshRSS data folder).
 
-In **Strict**: one column on the feeds of hidden categories — `priority`, FreshRSS's own per-feed
-Visibility. The previous integer is recorded before every write and put back afterwards. Nothing
+**Strict:** one column on the feeds of hidden categories — `priority`, FreshRSS's own per-feed
+Visibility. The previous value is recorded before every write and put back afterwards. Nothing
 else about a feed is touched: no name, URL, category, favicon, or another extension's settings.
 Nothing is written to FreshRSS's own database or config.
 
-## How this was built
-
-Written with AI assistance — the extension was developed in a conversation, then tested against
-a live FreshRSS 1.30.1 instance with roughly 1000 feeds: enable/disable round trips, Strict writes
-and restores, the three views, and the lock all verified against the database rather than assumed.
-
-That is disclosed because you deserve to know what you're installing, not because the code is
-handed-off and unexamined. **Forking and reading the code is encouraged.** If you'd rather run a
-smaller, hand-written version of just the feature you want, the whole thing is about 2,900 lines
-across six files, and none of it is clever. The parts worth reading if you want to audit it:
-
-| file | what to look at |
-|---|---|
-| `extension.php` | `sweepFeeds()` — every write, and the restore path |
-| `store.php` | the SQLite store; the only thing that persists anything |
-| `static/hidden.js` | the views; CSS rules injected per hidden category id |
-
-The design goal was a working extension with as little code as possible: no framework, no build
-step, no dependencies, no background jobs, and no data stored outside its own SQLite file. If you
-find it doing something it shouldn't, or something that could be twenty lines instead of a
-hundred, a PR pruning it is welcome.
+That database holds three tables: `meta` (view, mode, passcode, lock state), `hidden_cat` (which
+categories are hidden) and `feed_snap` (the Visibility values recorded so they can be restored).
+Deleting the extension folder leaves the file alone; delete the file itself to forget everything.
 
 ## Troubleshooting
 
-**Hiding does nothing on my phone.** You're in Light mode; switch to Strict.
+**Hiding does nothing on my phone.** You're in Light mode — switch to Strict.
 
-**A hidden category is empty when I click it.** Expected in Strict — its feeds are set to *Do not
-show*, which also empties the category page. Unhide to read it, or use the peeking view in the
-browser.
+**A hidden category is empty when I click it.** Expected in Strict: its feeds are set to *Do not
+show*, which empties the category page too. Unhide it to read it, or use the peeking view.
 
-**Settings won't save, or the page says the store isn't writable.** The web-server user can't
-write `data/users/<user>/extensions/HiddenCategories/`. This normally only happens if FreshRSS
-has been run as root from the command line, leaving root-owned files behind. Fix ownership, e.g.
-`chown -R www-data:www-data data/users/<user>/extensions` — use your own web-server user.
+**Settings won't save / the page says the store isn't writable.** The web server can't write
+`data/users/<your user>/extensions/HiddenCategories/`. This normally only happens if FreshRSS has
+been run as root from a command line, leaving root-owned files behind. Fix ownership with
+`chown -R www-data:www-data data/users/<your user>/extensions` (use your own web-server user).
 
-**Right-click doesn't offer Hide.** [RightClickActions](https://github.com/printfuck/xExtension-RightClickActions)
-isn't installed. Every other entry point works without it.
+**The eye button isn't there.** It appears once something is hidden — or once you've set a
+passcode, so you can lock before hiding anything. While locked, the passcode field replaces it.
 
-**The eye button isn't there.** The row appears once at least one category is hidden — or once
-you've set a passcode, so you can lock before hiding anything. While locked, the eye is replaced
-by the passcode field.
+**It won't load at all.** You're on FreshRSS below 1.28.0, which doesn't have a feature it needs.
 
-## Optional: right-click integration
+## Optional: right-click menu
 
-If [RightClickActions](https://github.com/printfuck/xExtension-RightClickActions) is installed,
-this extension adds *Hide category* / *Show category* to its sidebar context menu. Without it
-there is simply no right-click menu anywhere in FreshRSS, so nothing is missing — every other way
-of hiding still works. This extension never modifies that one; it only adds a menu item when the
-menu exists.
+With [RightClickActions](https://github.com/printfuck/xExtension-RightClickActions) installed,
+this adds *Hide category* / *Show category* to the sidebar's right-click menu. Without it there's
+no right-click menu anywhere in FreshRSS, so nothing is missing — every other way of hiding still
+works. This extension never modifies that one; it only adds a menu item when the menu exists.
 
-## Data it stores
+## How this was built
 
-Only in `data/users/<user>/extensions/HiddenCategories/state.sqlite`:
+Written with AI assistance, then tested against a real FreshRSS 1.30.1 install with about 1000
+feeds — enable/disable round trips, Strict writes and restores, the three views, and the lock all
+checked against the database rather than assumed — and again on a **blank** FreshRSS 1.30.1, where
+it installed from this release zip, enabled, hid a category, cycled the views and restored cleanly.
 
-| table | holds |
-|---|---|
-| `meta` | schema version, current view, mode, passcode (plain text), lock state, timestamps |
-| `hidden_cat` | which categories are hidden |
-| `feed_snap` | per-feed Visibility values recorded before a Strict write, so they can be restored |
-
-Deleting the extension directory leaves that file alone; delete the file itself to forget
-everything.
+That's disclosed so you know what you're installing. **Forking and reading the code is
+encouraged.** It's about 2,900 lines across six files and none of it is clever — the parts worth
+reading are `extension.php` (`sweepFeeds()`, which does every write and the restore),
+`store.php` (the SQLite store, the only thing that persists anything) and `static/hidden.js` (the
+views). The goal was a working extension with as little code as possible: no framework, no build
+step, no dependencies, no background jobs. A PR that prunes it is welcome.
 
 ## Licence
 
 GPL-3.0 — see [LICENSE](LICENSE).
 
-FreshRSS itself is AGPL-3.0. This is an independent work that talks to FreshRSS through its
-public extension API; check the AGPL's terms if you plan to redistribute a combined bundle.
+FreshRSS itself is AGPL-3.0. This is an independent work that talks to FreshRSS through its public
+extension API; check the AGPL's terms if you plan to redistribute a combined bundle.
