@@ -96,7 +96,11 @@ class HiddenCategoriesExtension extends Minz_Extension
 			// names+counts for the hidden ones only — a hidden category with no
 			// row in this map is named by its id, never by a guess
 			'meta' => array_filter($counts, static fn ($id) => in_array($id, $cats, true), ARRAY_FILTER_USE_KEY),
-			'api' => (string)_url('extension', 'configure', 'e', urlencode($this->getName())),
+			// _url() returns an HTML-escaped string ("&amp;"), which is correct
+			// in markup and WRONG in a JS string: fetch() would send a parameter
+			// literally named "amp;a" and every click would silently do nothing.
+			// Decode once, here, so the JS receives a real URL.
+			'api' => html_entity_decode((string)_url('extension', 'configure', 'e', urlencode($this->getName())), ENT_QUOTES),
 		];
 		return $vars;
 	}

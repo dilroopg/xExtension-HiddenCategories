@@ -22,10 +22,40 @@
 		return ext.hiddenCategories || null;
 	}
 
-	var HC = payload();
-	if (!HC || typeof HC !== 'object') {
-		return;                      // extension off: touch nothing
+	// window.context is built by FreshRSS's own main.js, which is loaded
+	// `defer async` — so it can execute AFTER this file (async scripts run in
+	// load order, not document order). Reading the payload once at load and
+	// bailing out when context is not there yet is what made every click and
+	// every hiding silently do nothing. So: wait for the context to appear
+	// (event, poll, or a short deadline), and only then start.
+	//
+	// The deadline matters: if main.js never runs (a broken theme), we stop
+	// quietly rather than leave a polling loop behind.
+	function whenContext(fn) {
+		var tries = 0;
+		var done = function (HC) {
+			if (HC && typeof HC === 'object') { fn(HC); }
+		};
+		var check = function () {
+			var HC = payload();
+			if (HC) { done(HC); return true; }
+			return false;
+		};
+		if (check()) { return; }
+		document.addEventListener('freshrss:globalContextLoaded', function () {
+			if (check()) { return; }
+			var t = setInterval(function () {
+				if (check() || ++tries > 40) { clearInterval(t); }
+			}, 50);
+		}, { once: true });
+		var t0 = setInterval(function () {
+			if (check() || ++tries > 40) { clearInterval(t0); }
+		}, 50);
 	}
+
+	whenContext(start);
+
+	function start(HC) {
 
 	var cats = Array.isArray(HC.cats) ? HC.cats.map(Number) : [];
 	var meta = HC.meta && typeof HC.meta === 'object' ? HC.meta : {};
@@ -73,13 +103,20 @@
 	// Markers for anything the CSS cannot reach by id (a theme that renames the
 	// tree classes). Purely additive: failing to find them hides nothing extra.
 	function markTree() {
-		var nodes = document.querySelectorAll('.tree-folder.category[id^="c_"]');
+		var nodes = document.querySelectorAll('li.tree-folder.category');
 		for (var n = 0; n < nodes.length; n++) {
 			var el = nodes[n];
-			var id = parseInt(String(el.id).replace(/^c_/, ''), 10);
-			if (!id) { continue; }
-			el.setAttribute('data-hc-cat', String(id));
-			el.setAttribute('data-hc-hidden', isHidden[id] ? '1' : '0');
+			var id = parseInt(String(el.id || '').replace(/^c_/, ''), 10);
+			if (id > 0) {
+				el.setAttribute('data-hc-cat', String(id));
+				el.setAttribute('data-hc-hidden', isHidden[id] ? '1' : '0');
+			} else {
+				// Main stream / Important / Favourites / Recently Read and other
+				// pseudo-categories have no id of ours. They are never hidden, so
+				// they must be marked 0 explicitly or the 'only' view's dimming
+				// rule (which selects [data-hc-hidden="0"]) would skip them.
+				el.setAttribute('data-hc-hidden', '0');
+			}
 		}
 	}
 
@@ -458,4 +495,5 @@
 	} else {
 		boot();
 	}
+	}   // end start(HC)
 }());
