@@ -310,6 +310,44 @@
 	}
 
 
+	// ---- 7. subscription management: a Hide button per category box -------
+	//
+	// subscription/index.phtml renders one div.box per category, and its
+	// ul.box-content carries data-cat-id — a stable hook, so the button is a
+	// plain injection with no template patch. If that markup ever changes the
+	// button simply does not appear; the settings page still hides things.
+	function buildSubscriptionButtons() {
+		if (!/c=subscription/.test(window.location.search)) { return; }
+		var boxes = document.querySelectorAll('div.box');
+		for (var n = 0; n < boxes.length; n++) {
+			var box = boxes[n];
+			if (box.getAttribute('data-hc-done') === '1') { continue; }
+			var list = box.querySelector('ul.box-content[data-cat-id]');
+			var title = box.querySelector('.box-title');
+			if (!list || !title) { continue; }
+			var id = parseInt(list.getAttribute('data-cat-id'), 10);
+			if (!id) { continue; }
+			box.setAttribute('data-hc-done', '1');
+
+			var hid = !!isHidden[id];
+			var btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'btn hc-sub-btn' + (hid ? ' hc-sub-on' : '');
+			btn.textContent = hid ? 'Show' : 'Hide';
+			btn.title = hid
+				? 'Unhide this category (it goes back to normal)'
+				: 'Hide this category from the sidebar and the stream';
+			btn.addEventListener('click', function (ev) {
+				ev.preventDefault();
+				ev.stopPropagation();
+				post({ act: this.hcWasHidden ? 'unhide' : 'hide', cat: this.hcCatId });
+			});
+			btn.hcCatId = id;
+			btn.hcWasHidden = hid;
+			title.appendChild(btn);
+		}
+	}
+
 	// ---- 8. keep markers correct as the page changes ----------------------
 	//
 	// Infinite scroll and "load more" append new .flux nodes. One observer that
@@ -336,6 +374,7 @@
 		buildButton();
 		buildHiddenSection();
 		buildBanner();
+		buildSubscriptionButtons();
 		watch();
 	}
 

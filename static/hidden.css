@@ -181,6 +181,18 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	white-space: nowrap;
 }
 
+/* ---- subscription management: Hide button in each category box ------- */
+.hc-sub-btn {
+	margin-left: 0.5em;
+	font-size: 0.8em;
+	padding: 0.1em 0.6em;
+	vertical-align: middle;
+}
+.hc-sub-btn.hc-sub-on {
+	border-color: rgba(120, 175, 255, 0.7);
+	font-weight: 600;
+}
+
 /* ---- settings page ---------------------------------------------------- */
 .hc-list {
 	display: flex;
