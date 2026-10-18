@@ -1,13 +1,44 @@
 # Hidden Categories
 
-Hide categories in FreshRSS without unsubscribing from them, and bring them back in one click.
+Keep parts of your feed reading private. Hide categories you don't want on screen — and bring
+them back in one click.
+
+This is a **privacy tool**, not an organisation tool. The point is that a category stays in your
+FreshRSS, keeps updating, and disappears from view: off your main stream, off the sidebar, and —
+in Strict mode — off your phone and every other synced app. Nobody glancing at your screen, and
+nobody picking up your phone, sees what you keep to yourself.
 
 FreshRSS has no "hide a category" switch. The usual workarounds are to unfollow the feeds (and
 lose them) or to collapse the folder (which still floods the main stream). This adds the missing
-switch: pick the categories you don't want to see right now, and the install behaves as if they
-aren't there — then one click brings them back.
+switch: pick the categories you don't want visible, and the install behaves as if they aren't
+there — then one click brings them back.
 
 Nothing is deleted, renamed or moved, and no subscription is ever touched.
+
+### What "private" does and does not mean here
+
+Read this before relying on it.
+
+**What it does hide:** the category and its articles, from the sidebar, the main stream, and (in
+Strict) from the FreshRSS API — so phone apps and reader apps don't show them either. The
+sidebar count is a bare number with no wording, so a glance at the screen doesn't advertise that
+anything is hidden. That is the core of it; the optional passcode is a small extra on top.
+
+**What it does not hide:**
+
+- **Nothing is encrypted.** The feeds, the category name and the articles are all still there in
+  your database, readable to anyone with access to the server or your database file.
+- **Someone logged into your FreshRSS can still find everything.** *Subscription management* is a
+  stock FreshRSS page that lists every feed and category, and it is not affected. Neither is a
+  search for a term in a hidden article while Strict is off, nor the category's own page once
+  unhidden.
+- **The passcode is a speed bump, not a lock on the data.** It's stored and displayed in plain
+  text and has no attempt limit — see [Optional passcode](#optional-passcode).
+- **Light mode is browser-only.** It filters what *this browser* draws; a phone or another
+  browser still shows everything.
+
+If you need the content itself kept from someone with server or database access, this is not
+that tool — that needs encryption at rest, which no FreshRSS extension provides.
 
 ## Install
 
