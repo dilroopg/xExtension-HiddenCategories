@@ -133,6 +133,48 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 
 	<div class="hc-group-label">Sidebar</div>
 	<?php
+	// Say plainly where the right-click item comes from. It is not ours: this
+	// extension only appends an item to the menu RightClickActions builds, so
+	// without that extension there is no menu to append to. Documented in the
+	// README since the first release, but the README is not where someone looks
+	// after right-clicking and finding nothing.
+	// Read the user's own enabled list rather than Minz_ExtensionManager: the
+	// manager only answers after its init() has run, and that list is keyed by
+	// the extension's *name* ("Right-Click Actions"), not its entrypoint — so
+	// asking for the entrypoint silently answers "no" and the panel would claim
+	// an installed extension is missing. The config array is always available.
+	$rcaInstalled = false;
+	try {
+		$enabled = FreshRSS_Context::userConf()->extensions_enabled;
+		if (is_array($enabled)) {
+			foreach (['Right-Click Actions', 'RightClickActions'] as $rcaName) {
+				if (!empty($enabled[$rcaName])) { $rcaInstalled = true; break; }
+			}
+		}
+	} catch (Throwable $e) {
+		// no user config in this render: say nothing rather than guess
+		$rcaInstalled = false;
+	}
+	?>
+	<div class="hc-lock-card hc-rca-card">
+		<p class="hc-hint">
+			<?php if ($rcaInstalled) { ?>
+				<strong>RightClickActions is installed.</strong> Right-clicking a category in the
+				sidebar shows <em>Hide category</em> / <em>Unhide category</em>.
+			<?php } else { ?>
+				<strong>Needs the RightClickActions extension.</strong> This extension adds a
+				<em>Hide category</em> / <em>Unhide category</em> item to the sidebar's right-click
+				menu — but that menu belongs to
+				<a href="https://github.com/printfuck/xExtension-RightClickActions" target="_blank" rel="noopener">RightClickActions</a>,
+				not to this extension. <strong>Without it installed FreshRSS has no right-click
+				menu at all</strong>, so there is nothing to add the item to. Every other way of
+				hiding — <em>Hide</em> on each row above, the button under <em>Subscription
+				management</em>, and the eye above the sidebar — works either way.
+			<?php } ?>
+		</p>
+	</div>
+
+	<?php
 	$showCount = $store->showCount();
 	$rowLabel = $store->rowLabel();
 	$modeRow = $store->rowMode();
