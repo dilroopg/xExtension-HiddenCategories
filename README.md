@@ -61,8 +61,36 @@ One question decides it: **should your phone and reader apps see the hidden cate
 Set it under **Mode** in the extension settings. Switching back to Light undoes everything Strict
 did.
 
+### Strict isn't a theme, it's a setting
+
+In Strict the hiding is stored where FreshRSS keeps every feed's visibility — so it's one state
+shared by all of FreshRSS, not one per app. Whatever you do here shows up everywhere, and the same
+is true in reverse.
+
+- Hide a category here → it's gone from the sidebar and the stream in the web app, and from
+  whatever your phone, tablet or reader app syncs. Nothing to install on the other side.
+- Unhide it here → it's back on the next sync, in every client.
+- Change a feed's **Visibility** in FreshRSS's own *Subscription management* (to *Reading list*,
+  *Important*, *Do not show*) → the extension sees it too, because it's reading that same column.
+  If you unhide the category later, that change is what gets restored, not the value that was
+  there when you hid it.
+- Show something only in Strict's `only` view → every other feed is set to *Do not show* for all
+  clients, so your phone shows exactly the hidden categories. That's the [cost](#what-it-costs) of
+  the view being true everywhere.
+
+In **Light** none of this applies: nothing leaves the server, so the web app filters and your other
+clients keep showing everything. That's the whole difference between the two modes.
+
+Tested as such on iOS **Lire** and **FeedFlow** — both sync through FreshRSS's Google Reader API, and
+a hidden category simply doesn't come through until you unhide it here.
+
+Two practical notes from that testing: the change reaches the app on a **full refresh**, so
+force-quit the app and open it again rather than relying on an in-app pull-to-refresh. And if you
+have the app's **cache turned on, it may keep showing the old list anyway** — turn the cache off
+(or clear it) to see the change.
+
 Hiding never stops fetching. Entries keep arriving and still count as unread; unhiding brings the
-whole backlog back.
+whole backlog back in every client, not just this browser.
 
 ## The green eye
 
