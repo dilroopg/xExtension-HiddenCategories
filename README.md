@@ -74,7 +74,7 @@ The eye *is* the button, and its icon shows which view you're in. Clicking cycle
 |---|---|---|---|
 | **hidden** | hidden categories are gone | their articles are gone | hiding applied |
 | **revealed** | everything, hidden rows tagged `HIDDEN` | hidden articles mixed in with the rest | hiding temporarily lifted |
-| **only** | everything listed, non-hidden rows fade back, hidden rows tagged `HIDDEN` | **only** the hidden categories' articles | hiding temporarily lifted |
+| **only** | everything listed, non-hidden rows fade back, hidden rows tagged `HIDDEN` | **only** the hidden categories' articles | inverse applied: hidden feeds revealed, all others set to *Do not show* |
 
 **"Only" removes the rest, it doesn't just narrow the list** — every article from a category you
 haven't hidden disappears from the stream. In the sidebar those rows are only dimmed, so you can
@@ -87,7 +87,15 @@ are the ones you'd hidden:
 
 ![hidden category tag](docs/hidden-tag.svg)
 
-Clicking again from `only` returns you to `hidden`, which re-applies the hiding.
+Clicking again from `only` returns you to `hidden`, which re-applies the hiding and undoes the
+inverse.
+
+**In Strict, `only` is real for every client.** Showing only the hidden categories means the server
+has to hide everything else, so entering the view reveals the hidden feeds *and* sets every
+non-hidden feed to *Do not show*. Your phone then shows exactly the hidden categories. Leaving the
+view — by the eye, a mode change, unhiding, or disabling the extension — puts all of them back.
+Those feeds are tracked separately from your hidden set, so a view never contaminates what you
+actually hid. Expect a sweep on entry and exit, sized to your non-hidden feed count.
 
 The row at the bottom of the sidebar labels itself with one of three display states, picked under
 **Sidebar** in the settings:
