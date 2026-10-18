@@ -575,6 +575,16 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	letter-spacing: 0.06em;
 	opacity: 0.55;
 }
+.hc-rca-card { margin-top: 0.9em; }
+.hc-rca-card .hc-rca-title {
+	display: block;
+	margin-bottom: 0.35em;
+	font-size: 0.78em;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	opacity: 0.55;
+}
 .hc-details summary {
 	cursor: pointer;
 	opacity: 0.75;

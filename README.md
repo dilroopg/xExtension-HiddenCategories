@@ -40,7 +40,8 @@ extension. Tested on FreshRSS 1.30.1 / PHP 8.4, on a live ~1000-feed install and
 
 1. Click **Hide** next to a category — in the extension's settings, on the category box under
    **Subscription management**, or by right-clicking it in the sidebar (that one needs the
-   optional [RightClickActions](#optional-right-click-menu) extension).
+   [Right Click Actions - Feed Settings Panel](#right-click-item-needs-another-extension)
+   extension).
 2. A button with a green eye appears above the sidebar. Click it to cycle through three views.
 3. To get everything back: unhide the category, or press **Restore everything now**.
 
@@ -236,12 +237,19 @@ passcode, so you can lock before hiding anything. While locked, the passcode fie
 
 **It won't load at all.** You're on FreshRSS below 1.28.0, which doesn't have a feature it needs.
 
-## Optional: right-click menu
+## Right-click item needs another extension
 
-With [RightClickActions](https://github.com/printfuck/xExtension-RightClickActions) installed,
-this adds *Hide category* / *Show category* to the sidebar's right-click menu. Without it there's
-no right-click menu anywhere in FreshRSS, so nothing is missing — every other way of hiding still
-works. This extension never modifies that one; it only adds a menu item when the menu exists.
+The right-click item depends on
+[**Right Click Actions - Feed Settings Panel**](https://github.com/printfuck/xExtension-RightClickActions)
+(`xExtension-RightClickActions`). That extension is what puts a menu on the sidebar's
+categories in the first place; this one only appends *Hide category* / *Show category* to that
+menu.
+
+**Everything else works without it.** The *Hide* buttons in the settings, the button under
+*Subscription management*, and the green eye above the sidebar don't need any other extension —
+only the right-click route does. With Right Click Actions absent there is no right-click menu
+anywhere in FreshRSS, so nothing is missing. This extension never modifies that one; it adds a
+menu item only when the menu exists.
 
 ## How this was built
 
