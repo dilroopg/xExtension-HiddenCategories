@@ -3,14 +3,15 @@
        content:"hidden" uppercased by text-transform, font-size 0.62em of the ~15px
        sidebar title, letter-spacing 0.05em, opacity 0.7, margin-left 0.45em,
        padding 0 0.3em, border 1px solid currentColor, border-radius 3px,
-       background transparent. -->
-  <rect width="210" height="40" fill="#222"/>
-  <text x="10" y="26" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
-        font-size="15" fill="#ddd">Comics</text>
+       background transparent.
+       No backdrop rectangle: the tag has no fill in reality, and painting one here
+       made the illustration look like a filled pill on the dark README. -->
+  <text x="2" y="26" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+        font-size="15" fill="#bbb">Comics</text>
   <g opacity="0.7">
-    <rect x="76" y="13" width="52" height="15" rx="3" ry="3"
-          fill="none" stroke="#ddd" stroke-width="1"/>
-    <text x="80.5" y="24.2" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
-          font-size="9.3" letter-spacing="0.47" fill="#ddd">HIDDEN</text>
+    <rect x="68" y="11" width="52" height="16" rx="3" ry="3"
+          fill="none" stroke="#bbb" stroke-width="1"/>
+    <text x="72.5" y="22.6" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+          font-size="9.3" letter-spacing="0.47" fill="#bbb">HIDDEN</text>
   </g>
 </svg>
