@@ -1,20 +1,22 @@
 # Hidden Categories
 
-> **Companion: [Favorite Categories](https://github.com/dilroopg/xExtension-FavoriteCategories)** — the opposite job. The star button filters the sidebar and stream *down to* a few categories you mark as favorites (`All` → `Only favorites` → `No favorites`). Use it when you have too many categories and want to read only a handful, rather than putting some away.
+> **Companion: [Favorite Categories](https://github.com/dilroopg/xExtension-FavoriteCategories)** does the opposite job. Its star button narrows the sidebar and stream *down to* a few categories that you mark as favorites (`All` → `Only favorites` → `No favorites`). Use it when you have too many categories and want to read only a handful of them, rather than putting some away.
 >
-> The two don't conflict and neither needs the other. This extension hides rows; Favorite only dims them, and every rule it writes skips rows already hidden — so a category that is both **hidden and favorited stays hidden**. Installed together, their buttons share one row above the sidebar, splitting the width evenly.
+> The two extensions don't conflict, and neither one needs the other. This one hides rows and Favorite Categories only dims them. Favorite Categories skips any row that is already hidden, so a category that is both hidden and favorited stays hidden. When you install both, their buttons share one row above the sidebar and split the width evenly.
 >
-> Both have Light and Strict modes, and in Strict neither will ever write to a feed the other owns: Favorite never touches a feed inside a hidden category, so the two can't fight over the same row.
+> Both extensions have Light and Strict modes. In Strict, neither one writes to a feed that the other one owns: Favorite Categories never touches a feed inside a hidden category. That way the two can't fight over the same row.
 
-**No creeping on your hidden feeds.** Hide categories from FreshRSS so they aren't on screen —
-no sidebar entry, no articles in your main stream — and bring them back in one click.
+**No creeping on your hidden feeds.** You can hide categories in FreshRSS so they aren't on screen:
+no sidebar entry and no articles in your main stream. You can bring them back in one click.
 
-This is aimed at screen lurkers: someone at the next desk, a person walking past, a friend
-picking up your phone. The category stays in your FreshRSS and keeps updating; it just isn't
-visible. In Strict mode it also disappears from your phone and every synced reader app.
+This extension is aimed at people reading in public places: someone at the next desk, a person
+walking past, or a friend picking up your phone. The category stays in your FreshRSS and keeps
+updating; it just isn't visible. In Strict mode, it also disappears from your phone and from every
+synced reader app.
 
-FreshRSS has no "hide a category" switch — the usual workarounds are to unsubscribe (and lose the
-feeds) or collapse the folder (which still floods the main stream). This adds the missing switch.
+FreshRSS has no "hide a category" switch. The usual workarounds are to unsubscribe (and lose the
+feeds) or to collapse the folder (which still floods the main stream). This extension adds the
+missing switch.
 
 Nothing is deleted, renamed or moved, and no subscription is ever touched.
 
@@ -35,116 +37,124 @@ your settings alone.
 
 Then open **Settings → Extensions → Hidden Categories → enable**.
 
-**Requirements:** FreshRSS 1.28.0 or newer. Nothing else — no build step, no config file, no other
-extension. Tested on FreshRSS 1.30.1 / PHP 8.4, on a live ~1000-feed install and on a blank one.
+**Requirements:** FreshRSS 1.28.0 or newer. Nothing else: no build step, no config file and no
+other extension. It was tested on FreshRSS 1.30.1 with PHP 8.4, on a live install with about 1000
+feeds and on an empty one.
 
 ## Quick start
 
-1. Click **Hide** next to a category — in the extension's settings, on the category box under
-   **Subscription management**, or by right-clicking it in the sidebar (that one needs the
-   [RightClickActions](#right-click-item-needs-another-extension) extension).
+1. Click **Hide** next to a category. You can do this in the extension's settings, on the category
+   box under **Subscription management**, or by right-clicking the category in the sidebar (that
+   last option needs the [RightClickActions](#right-click-item-needs-another-extension) extension).
 2. A button with a green eye appears above the sidebar. Click it to cycle through three views.
-3. To get everything back: unhide the category, or press **Restore everything now**.
+3. To get everything back, unhide the category or press **Restore everything now**.
 
 ## Pick a mode
 
-One question decides it: **should your phone and reader apps see the hidden categories too?**
+One question decides the mode: **should your phone and reader apps see the hidden categories
+too?**
 
 | | **Light** (default) | **Strict** |
 |---|---|---|
 | main stream in your browser | filtered | filtered |
 | phone, reader app, API | still show everything | **hidden** |
 | the category's own page | still shows its feeds | **empty until you unhide it** |
-| what it writes | nothing at all | FreshRSS's per-feed Visibility, old value saved and restored later |
-| speed when hiding | instant | a burst at the click (see [costs](#what-it-costs)) |
+| what it writes | nothing at all | FreshRSS's per-feed Visibility; the old value is saved and restored later |
+| speed when hiding | instant | a burst of work at the click (see [costs](#what-it-costs)) |
 
-Set it under **Mode** in the extension settings. Switching back to Light undoes everything Strict
-did.
+You set the mode under **Mode** in the extension settings. Switching back to Light undoes
+everything that Strict did.
 
-### Strict isn't a theme, it's a setting
+### Strict changes a server setting, not just the page
 
-In Strict the hiding is stored where FreshRSS keeps every feed's visibility — so it's one state
-shared by all of FreshRSS, not one per app. Whatever you do here shows up everywhere, and the same
-is true in reverse.
+In Strict mode, the hiding is stored in the same place where FreshRSS keeps each feed's visibility.
+That makes it one state shared by all of FreshRSS rather than one state per app. Whatever you do
+here shows up everywhere, and the reverse is also true.
 
-- Hide a category here → it's gone from the sidebar and the stream in the web app, and from
-  whatever your phone, tablet or reader app syncs. Nothing to install on the other side.
-- Unhide it here → it's back on the next sync, in every client.
-- Change a feed's **Visibility** in FreshRSS's own *Subscription management* (to *Reading list*,
-  *Important*, *Do not show*) → the extension sees it too, because it's reading that same column.
-  If you unhide the category later, that change is what gets restored, not the value that was
-  there when you hid it.
-- Show something only in Strict's `only` view → every other feed is set to *Do not show* for all
-  clients, so your phone shows exactly the hidden categories. That's the [cost](#what-it-costs) of
-  the view being true everywhere.
+- **Hide a category here** and it is gone from the sidebar and stream in the web app, and from
+  whatever your phone, tablet or reader app syncs. You don't need to install anything on the other
+  side.
+- **Unhide it here** and it comes back on the next sync, in every client.
+- **Change a feed's Visibility** in FreshRSS's own *Subscription management* (to *Reading list*,
+  *Important* or *Do not show*) and this extension sees the change too, because it reads that same
+  column. If you unhide the category later, that changed value is what gets restored, not the value
+  that was there when you hid it.
+- **Use the `only` view** and every other feed is set to *Do not show* for all clients, so your
+  phone shows exactly the hidden categories. That is what the view has to do to be true everywhere,
+  and it is why the view costs [time](#what-it-costs).
 
-In **Light** none of this applies: nothing leaves the server, so the web app filters and your other
-clients keep showing everything. That's the whole difference between the two modes.
+None of this applies in **Light** mode. Nothing leaves the server, so only the web app filters and
+your other clients keep showing everything. That difference is the whole point of the two modes.
 
-Tested as such on iOS **Lire** and **FeedFlow** — both sync through FreshRSS's Google Reader API, and
-a hidden category simply doesn't come through until you unhide it here.
+The extension was tested on this behaviour with iOS **Lire** and **FeedFlow**. Both apps sync
+through FreshRSS's Google Reader API, and a hidden category simply doesn't come through until you
+unhide it here.
 
-Two practical notes from that testing: the change reaches the app on a **full refresh**, so
-force-quit the app and open it again rather than relying on an in-app pull-to-refresh. And if you
-have the app's **cache turned on, it may keep showing the old list anyway** — turn the cache off
-(or clear it) to see the change.
+Two practical notes from that testing. First, the change reaches the app on a **full refresh**, so
+force-quit the app and open it again rather than relying on a pull-to-refresh inside the app.
+Second, if the app's **cache is turned on, it may keep showing the old list anyway**. Turn the
+cache off, or clear it, to see the change.
 
-Hiding never stops fetching. Entries keep arriving and still count as unread; unhiding brings the
-whole backlog back in every client, not just this browser.
+Hiding never stops fetching. Entries keep arriving and still count as unread. When you unhide a
+category, the whole backlog comes back in every client, not just this browser.
 
 ## The green eye
 
-The eye *is* the button, and its icon shows which view you're in. Clicking cycles:
+The eye *is* the button, and its icon shows which view you are in. Clicking it cycles through the
+views:
 
 | ![closed eye](docs/eye-hidden.svg) | ![peeking eye](docs/eye-revealed.svg) | ![open eye](docs/eye-only.svg) |
 |---|---|---|
-| **hidden** — what you hid is gone | **revealed** — everything, hidden ones marked | **only** — just the hidden ones |
+| **hidden** — what you hid is gone | **revealed** — everything, with the hidden ones marked | **only** — just the hidden ones |
 | next to it, the button reads **Hidden** | the button reads **All shown** | the button reads **Only hidden** |
+
+Here is what each view does to each part of the page:
 
 | view | sidebar | stream | feeds |
 |---|---|---|---|
-| **hidden** | hidden categories are gone | their articles are gone | hiding applied |
-| **revealed** | everything, hidden rows tagged `HIDDEN` | hidden articles mixed in with the rest | hiding temporarily lifted |
-| **only** | everything listed, non-hidden rows fade back, hidden rows tagged `HIDDEN` | **only** the hidden categories' articles | inverse applied: hidden feeds revealed, all others set to *Do not show* |
+| **hidden** | hidden categories are gone | their articles are gone | the hiding is applied |
+| **revealed** | everything, with hidden rows tagged `HIDDEN` | hidden articles mixed in with the rest | the hiding is temporarily lifted |
+| **only** | everything listed, non-hidden rows dimmed, hidden rows tagged `HIDDEN` | only the hidden categories' articles | the inverse is applied: hidden feeds are revealed and all others are set to *Do not show* |
 
-**"Only" removes the rest, it doesn't just narrow the list** — every article from a category you
-haven't hidden disappears from the stream. In the sidebar those rows are only dimmed, so you can
-still click through to them.
+**The "only" view removes the other categories; it doesn't just narrow the list.** Every article
+from a category you haven't hidden disappears from the stream. In the sidebar those rows are only
+dimmed, so you can still click through to them.
 
-The `HIDDEN` tag only appears in the **revealed** and **only** views — it is never shown in the
-normal `hidden` view, because in that view the categories aren't on screen at all. In those two
-views it sits after the category's name, so you can tell at a glance which of the visible ones
-are the ones you'd hidden:
+The `HIDDEN` tag appears only in the **revealed** and **only** views. It never appears in the
+normal `hidden` view, because in that view the categories aren't on screen at all. In the other two
+views, the tag sits after the category's name so you can tell at a glance which of the visible
+categories you had hidden:
 
 ![hidden category tag](docs/hidden-tag.svg)
 
-Clicking again from `only` returns you to `hidden`, which re-applies the hiding and undoes the
-inverse.
+Clicking the eye again from the `only` view returns you to `hidden`, which re-applies the hiding and
+undoes the inverse.
 
-**In Strict, `only` is real for every client.** Showing only the hidden categories means the server
-has to hide everything else, so entering the view reveals the hidden feeds *and* sets every
-non-hidden feed to *Do not show*. Your phone then shows exactly the hidden categories. Leaving the
-view — by the eye, a mode change, unhiding, or disabling the extension — puts all of them back.
-Those feeds are tracked separately from your hidden set, so a view never contaminates what you
-actually hid. Expect a sweep on entry and exit, sized to your non-hidden feed count.
+**In Strict mode, the `only` view is real for every client.** To show only the hidden categories,
+the server has to hide everything else. So entering the view reveals the hidden feeds *and* sets
+every non-hidden feed to *Do not show*; your phone then shows exactly the hidden categories.
+Leaving the view, whether by the eye, a mode change, unhiding or disabling the extension, puts all
+of them back. Those feeds are tracked separately from your hidden set, so a view never contaminates
+what you actually hid. Expect a sweep on entry and on exit, sized to your non-hidden feed count.
 
-The row at the bottom of the sidebar labels itself with one of three display states, picked under
-**Sidebar** in the settings:
+The row at the bottom of the sidebar labels itself in one of three display states. You pick the
+state under **Sidebar** in the settings:
 
 | state | the row shows |
 |---|---|
 | **Nothing but the caret** | no text at all — the row is just its disclosure arrow |
 | **The number only** | `7` |
-| **Label and number** | `Hidden 7` (any text; default label is `Hidden`) |
+| **Label and number** | `Hidden 7` (any text; the default label is `Hidden`) |
 
-The label under **Label text** is used by the third state and is kept when you switch away from it,
-so moving between states never loses what you typed. An empty label in the third state falls back
-to the number alone.
+The third state uses the text you type under **Label text**. That text is kept when you switch to
+another state, so moving between states never loses what you typed. If the label is empty in the
+third state, the row falls back to the number alone.
 
-All three save with **one Save button** and give the same feedback: **After saving** updates as you
-pick a state or type, and an "Unsaved changes" line stays until you commit. Nothing here changes
-what is hidden, what Strict enforces, or the eye button — the row itself always stays, because it's
-how you open the list. With the first state, someone glancing at the screen learns nothing from it.
+All three states save with **one Save button** and give the same feedback: **After saving** updates
+as you pick a state or type, and an "Unsaved changes" line stays until you commit. None of this
+changes what is hidden, what Strict enforces, or the eye button. The row itself always stays,
+because it is how you open the list. With the first state, someone glancing at the screen learns
+nothing from it.
 
 <details>
 <summary>What "private" covers — and what it doesn't</summary>
@@ -194,159 +204,96 @@ If you want actual security, use FreshRSS's own authentication. This is a curtai
 
 ## What it costs
 
-Measured on an install with about 1000 feeds. All cost is at the moment you click — page loads
-stay at normal speed, and nothing runs in the background (no cron, no external service, no network
-calls).
+These numbers were measured on an install with about 1000 feeds. All of the cost happens at the
+moment you click. Page loads stay at normal speed, and nothing runs in the background: no cron job,
+no external service and no network calls.
 
 - **Hiding or unhiding in Strict** writes FreshRSS's Visibility setting for every feed in the
-  category: **188 feeds ≈ 1.4 s**, **864 feeds ≈ 3 s**.
+  category. That takes about **1.4 s for 188 feeds** and about **3 s for 864 feeds**.
 - **The peeking view is expensive.** In Strict a hidden feed is marked *Do not show*, so the server
-  doesn't send its articles at all — showing them means lifting that for every feed first:
-  **≈ 2.6–3 s each way** for 864 feeds. In Light it is instant.
-- **The only-hidden view is the most expensive**, because it has to be true for other clients too:
-  entering it reveals the hidden feeds *and* demotes every other feed, and leaving it undoes both.
-  That is two sweeps sized to your whole feed list. In Light it is instant.
-- **While peeking, your hidden feeds really are visible to every synced client**, phone included —
-  that is the only way to show them. Closing the eye hides them again.
-- **While showing only hidden, the reverse is true:** every other feed is marked *Do not show* for
-  every client, so your phone shows only the hidden categories. Closing the eye puts them back.
-- **Hidden feeds keep downloading.** Hiding changes what's displayed, never what's fetched, so
+  doesn't send its articles at all. Showing them means lifting that mark for every feed first,
+  which takes about **2.6–3 s each way** for 864 feeds. In Light the view is instant.
+- **The only-hidden view is the most expensive**, because it has to be true for other clients too.
+  Entering the view reveals the hidden feeds *and* demotes every other feed, and leaving the view
+  undoes both. That is two sweeps, each sized to your whole feed list. In Light the view is
+  instant.
+- **While you are peeking, your hidden feeds really are visible to every synced client**,
+  including your phone. That is the only way to show them. Closing the eye hides them again.
+- **While you are showing only the hidden categories, the reverse is true:** every other feed is
+  marked *Do not show* for every client, so your phone shows only the hidden categories. Closing
+  the eye puts them back.
+- **Hidden feeds keep downloading.** Hiding changes what is displayed, never what is fetched, so
   unread counts can climb for categories you can't see.
 
 ## Getting everything back
 
-- **One category** — `Show` in the settings list, the button under Subscription management, or
-  right-click → *Show category*.
-- **Everything at once** — **Restore everything now** in the settings. Unhides every category and
-  returns every feed to its recorded value.
-- **Disable the extension** — it restores first, then disables. If the restore can't complete the
-  disable is **refused** and the extension stays enabled with its settings reachable, so you can't
-  end up with hidden feeds and no way back.
+- **One category:** click `Show` in the settings list, use the button under Subscription
+  management, or right-click the category and choose *Show category*.
+- **Everything at once:** press **Restore everything now** in the settings. This unhides every
+  category and returns every feed to its recorded value.
+- **Disable the extension:** it restores everything first and then disables itself. If the restore
+  cannot complete, the disable is **refused** and the extension stays enabled with its settings
+  reachable, so you can't end up with hidden feeds and no way back.
 
-Your settings, hidden set, mode and passcode are kept when you disable, and come back when you
-re-enable — where Strict re-applies the hiding automatically, so it never claims to hide things
-that are actually visible.
+The extension keeps your settings, hidden set, mode and passcode when you disable it, and they come
+back when you re-enable it. Strict then re-applies the hiding automatically, so the extension never
+claims to hide things that are actually visible.
 
 ## What it writes
 
-**Light:** nothing. Everything it stores lives in its own SQLite file —
-`data/users/<your user>/extensions/HiddenCategories/state.sqlite` (your FreshRSS data folder).
+**Light:** the extension writes nothing. Everything it stores lives in its own SQLite file,
+`data/users/<your user>/extensions/HiddenCategories/state.sqlite`, inside your FreshRSS data
+folder.
 
-**Strict:** one column on the feeds of hidden categories — `priority`, FreshRSS's own per-feed
-Visibility. The previous value is recorded before every write and put back afterwards. Nothing
-else about a feed is touched: no name, URL, category, favicon, or another extension's settings.
-Nothing is written to FreshRSS's own database or config.
+**Strict:** the extension writes one column on the feeds of hidden categories: `priority`, which is
+FreshRSS's own per-feed Visibility setting. It records the previous value before every write and
+puts it back afterwards. It touches nothing else about a feed: not the name, URL, category or
+favicon, and none of another extension's settings. It writes nothing to FreshRSS's own database or
+config.
 
-That database holds three tables: `meta` (view, mode, passcode, lock state, the two sidebar display
-switches), `hidden_cat` (which categories are hidden) and `feed_snap` (the Visibility values
-recorded so they can be restored). Deleting the extension folder leaves the file alone; delete the
-file itself to forget everything.
+That SQLite file holds three tables. `meta` stores the view, the mode, the passcode, the lock state
+and the two sidebar display switches. `hidden_cat` stores which categories are hidden. `feed_snap`
+stores the Visibility values, recorded so that they can be restored. If you delete the extension
+folder, the file stays behind; delete the file itself to forget everything.
 
-## Changelog
+## What's new
 
-**1.5.5** — the button label names the state you are in.
-
-1.5.3 flipped the labels to name the *destination* — what you would see after clicking. That turned
-out to be unreadable in practice: the eye told you where you were going while you were looking at
-something else, so the label never matched the page.
-
-The label now names what is on screen **right now**:
-
-| You are looking at | Button reads |
-|---|---|
-| hidden categories removed | **Hidden** |
-| everything back, hidden ones marked | **All shown** |
-| just the hidden categories | **Only hidden** |
-
-The tooltip says the same thing in a sentence. Clicking still cycles in the same order.
-
-**1.5.4** — two-word labels wrap instead of being cut off.
-
-The eye button's label was clipped with an ellipsis, so *Only hidden* and *Show all* read as
-*Only hid…*. The text now wraps onto two lines at the space, the way the star button in the
-companion extension does. Stylesheet and label markup only.
-
-**1.5.3** — the button labels now name the destination.
-
-The labels named the *action*, which read ambiguously next to each other: from the normal state the
-button said *Show all* while everything was already showing, and from the peek state it said *Show
-all* again while the click actually narrowed things down to only the hidden categories.
-
-Each label now says what you will be looking at **after** the click:
-
-| Showing now | Button says | After clicking |
-|---|---|---|
-| hidden categories removed | **Show all** | everything back, hidden ones marked |
-| everything back, hidden ones marked | **Only hidden** | just the hidden categories |
-| just the hidden categories | **Hide** | hidden categories removed again |
-
-Same three states, same cycle, same writes. Labels and tooltips only.
-
-**1.5.0** — *show only hidden* now works on every client in Strict.
-
-- It was browser-only, and that was a flaw: entering the view revealed the hidden feeds so their
-  articles could render, which meant every synced client saw everything. A server can only say
-  "this feed is not shown", not "show only these".
-- Strict now enforces the inverse too: entering the view reveals the hidden feeds **and** sets every
-  non-hidden feed to *Do not show*. Your phone then shows exactly the hidden categories, and
-  leaving the view restores all of them.
-- The feeds demoted to make the view work are recorded in their own table, never mixed with your
-  hidden set, and are restored on every exit path including disabling the extension.
-- Cost: a sweep on entry and exit, sized to your non-hidden feed count.
-
-**1.4.5** — the settings page now says the right-click item needs the RightClickActions extension,
-instead of leaving that only in this README.
-
-**1.4.4** — the control bar above the sidebar became shared ground, so a second extension can put a
-button beside the eye. Its children size themselves: one control takes the full width, two split it.
-
-**1.4.3** — the sidebar row's three display states, including label-only.
-
-- The on/off "show the count" checkbox is replaced by a three-option choice: **nothing but the
-  caret**, **the number only**, or **label and number**. The checkbox could not express "label but
-  no number", which is the state that actually obscures the row.
-- The label under **Label text** is kept when you switch to another state, so moving to caret-only
-  and back does not lose it. An empty label in the third state falls back to the number alone.
-- The display state is stored explicitly (`rowmode`) instead of being inferred from two flags.
-  Existing settings are migrated automatically on read; nothing is lost.
-- 1.4.2 and 1.4.1 are folded in: the label is free text (it was an on/off prefix switch), and both
-  settings save with one **Save** button, a live **After saving** preview, and an
-  "Unsaved changes" line.
-
-**1.3.5** — the `HIDDEN` tag gained a note on when it appears; the tag illustration was redrawn.
-
-Earlier versions are on the [releases page](https://github.com/dilroopg/xExtension-HiddenCategories/releases).
+Version 1.5.5 renames the eye button's label so that it describes the view you are in. The full
+history is in [CHANGELOG.md](CHANGELOG.md), and every release is on the
+[releases page](https://github.com/dilroopg/xExtension-HiddenCategories/releases).
 
 ## Troubleshooting
 
-**Hiding does nothing on my phone.** You're in Light mode — switch to Strict.
+**Hiding does nothing on my phone.** You are in Light mode. Switch to Strict.
 
-**A hidden category is empty when I click it.** Expected in Strict: its feeds are set to *Do not
-show*, which empties the category page too. Unhide it to read it, or use the peeking view.
+**A hidden category is empty when I click it.** This is expected in Strict: its feeds are set to
+*Do not show*, which empties the category page too. Unhide the category to read it, or use the
+peeking view.
 
-**Settings won't save / the page says the store isn't writable.** The web server can't write
+**Settings won't save, or the page says the store isn't writable.** The web server can't write to
 `data/users/<your user>/extensions/HiddenCategories/`. This normally only happens if FreshRSS has
-been run as root from a command line, leaving root-owned files behind. Fix ownership with
-`chown -R www-data:www-data data/users/<your user>/extensions` (use your own web-server user).
+been run as root from a command line, which leaves root-owned files behind. Fix the ownership with
+`chown -R www-data:www-data data/users/<your user>/extensions`, using your own web-server user.
 
-**The eye button isn't there.** It appears once something is hidden — or once you've set a
-passcode, so you can lock before hiding anything. While locked, the passcode field replaces it.
+**The eye button isn't there.** It appears once something is hidden, or once you have set a
+passcode so that you can lock the controls before hiding anything. While the controls are locked,
+the passcode field replaces the button.
 
-**It won't load at all.** You're on FreshRSS below 1.28.0, which doesn't have a feature it needs.
+**It won't load at all.** You are on a FreshRSS version below 1.28.0, which doesn't have a feature
+this extension needs.
 
 ## Right-click item needs another extension
 
 The right-click item depends on
 [**Right Click Actions - Feed Settings Panel**](https://github.com/printfuck/xExtension-RightClickActions)
-(`xExtension-RightClickActions`). That extension is what puts a menu on the sidebar's
-categories in the first place; this one only appends *Hide category* / *Show category* to that
-menu.
+(`xExtension-RightClickActions`). That extension is what puts a menu on the sidebar's categories
+in the first place. This extension only adds *Hide category* and *Show category* to that menu.
 
 **Everything else works without it.** The *Hide* buttons in the settings, the button under
-*Subscription management*, and the green eye above the sidebar don't need any other extension —
-only the right-click route does. With Right Click Actions absent there is no right-click menu
-anywhere in FreshRSS, so nothing is missing. This extension never modifies that one; it adds a
-menu item only when the menu exists.
+*Subscription management* and the green eye above the sidebar all work on their own; only the
+right-click route needs another extension. Without Right Click Actions, FreshRSS has no right-click
+menu anywhere, so nothing is missing. This extension never modifies that one. It adds a menu item
+only when the menu exists.
 
 ## How this was built
 
