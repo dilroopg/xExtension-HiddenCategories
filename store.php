@@ -161,11 +161,55 @@ final class HiddenCategoriesStore
 		)');
 		$pdo->exec('CREATE TABLE IF NOT EXISTS feed_snap (
 			feed_id INTEGER PRIMARY KEY,
-			orig_attributes TEXT NOT NULL,
+			orig_priority INTEGER NOT NULL,
 			applied_at TEXT NOT NULL,
 			mode TEXT NOT NULL,
 			note TEXT NOT NULL
 		)');
+		$this->migrateFeedSnap($pdo);
+	}
+
+	/**
+	 * Older builds of this extension created feed_snap with orig_attributes TEXT
+	 * (a plan-era column that was never written). Strict mode snapshots the
+	 * `priority` integer instead, so bring an existing table forward.
+	 *
+	 * Only ever runs when the old column is present, and only when the table is
+	 * empty — a table with rows means a real snapshot, and rewriting it would
+	 * destroy the only copy of someone's previous value.
+	 */
+	private function migrateFeedSnap(PDO $pdo): void
+	{
+		try {
+			$cols = [];
+			foreach ($pdo->query('PRAGMA table_info(feed_snap)')->fetchAll() as $c) {
+				$cols[(string)$c['name']] = true;
+			}
+			if (isset($cols['orig_priority'])) {
+				return;   // already current
+			}
+			if (!isset($cols['orig_attributes'])) {
+				return;   // unknown shape; leave it alone rather than guess
+			}
+			$rows = (int)$pdo->query('SELECT count(*) FROM feed_snap')->fetchColumn();
+			if ($rows > 0) {
+				// do not silently drop recorded values
+				$this->notice = 'feed_snap has an old column layout with '
+					. $rows . ' row(s); Strict mode will not run until it is cleared.';
+				return;
+			}
+			$pdo->exec('ALTER TABLE feed_snap RENAME TO feed_snap_old');
+			$pdo->exec('CREATE TABLE feed_snap (
+				feed_id INTEGER PRIMARY KEY,
+				orig_priority INTEGER NOT NULL,
+				applied_at TEXT NOT NULL,
+				mode TEXT NOT NULL,
+				note TEXT NOT NULL
+			)');
+			$pdo->exec('DROP TABLE feed_snap_old');
+		} catch (Throwable $e) {
+			$this->notice = 'feed_snap layout could not be migrated: ' . $e->getMessage();
+		}
 	}
 
 	private function seedMeta(): void
@@ -253,7 +297,141 @@ final class HiddenCategoriesStore
 		return ['ok' => true, 'message' => 'Unlocked for this session.'];
 	}
 
-	// ---------------------------------------------------------------- meta
+	// ------------------------------------------------------------- strict
+	//
+	// Strict mode makes hiding real for every client: it writes FreshRSS's own
+	// per-feed Visibility (the `priority` column) so the feed leaves the main
+	// stream in the API too, not just in this browser.
+	//
+	//   20  Show in important feeds
+	//   10  Show in main stream          <- what almost every feed is
+	//    0  Show in its category         <- what Strict writes
+	//   -5  Show in its feed
+	//  -10  Do not show                 <- never returned by the API at all
+	//
+	// The value written is -10, "Do not show", NOT 0 ("Show in its category").
+	// Measured difference against the real predicates in EntryDAO.php:
+	//
+	//   get=a  (web main stream)   selects priority >= 10  -> both 0 and -10 excluded
+	//   get=A  (greader reading-list) selects priority >= 0 -> 0 still included,
+	//                                                          -10 excluded
+	//   category page              selects by category      -> 0 visible, -10 not
+	//
+	// Reader apps use the A stream, so only -10 actually hides a feed from a
+	// phone. The cost, accepted deliberately: a hidden feed is also gone from its
+	// own category page until it is unhidden. Hiding is meant to be a real
+	// removal that one click reverses, not a filter the category page undoes.
+	//
+	// Every value is snapshotted before it is changed and restored afterwards.
+	// Nothing else about the feed is touched.
+
+	public const PRIORITY_HIDDEN = -10;
+
+
+	/**
+	 * Snapshot one feed's priority and set it to "show in its category".
+	 * Returns:
+	 *   snapped   had a different priority, snapshot taken, value written
+	 *   preset    already 0, nothing written, no snapshot
+	 *   nochange  already recorded and matching, nothing to do
+	 *   error     the write failed; the snapshot was NOT kept
+	 *
+	 * @return array{state:string,orig:int|null}
+	 */
+	public function enforceFeed(int $feedId, int $currentPriority): array
+	{
+		try {
+			$st = $this->pdo()->prepare('SELECT orig_priority FROM feed_snap WHERE feed_id = :id');
+			$st->execute([':id' => $feedId]);
+			$snapped = $st->fetchColumn();
+		} catch (Throwable $e) {
+			return ['state' => 'error', 'orig' => null];
+		}
+
+		if ($snapped !== false) {
+			// already recorded: if the feed drifted back, re-apply only
+			if ($currentPriority === self::PRIORITY_HIDDEN) {
+				return ['state' => 'nochange', 'orig' => (int)$snapped];
+			}
+			return ['state' => 'nochange', 'orig' => (int)$snapped];
+		}
+
+		if ($currentPriority === self::PRIORITY_HIDDEN) {
+			// already category-only before we ever touched it: leave it alone and
+			// remember nothing, so a later restore cannot claim credit for it
+			return ['state' => 'preset', 'orig' => null];
+		}
+
+		try {
+			$this->pdo()->beginTransaction();
+			$ins = $this->pdo()->prepare(
+				'INSERT INTO feed_snap (feed_id, orig_priority, applied_at, mode, note)
+				 VALUES (:id, :p, :t, :m, :n)');
+			$ins->execute([
+				':id' => $feedId,
+				':p' => $currentPriority,
+				':t' => date('c'),
+				':m' => 'strict',
+				':n' => 'snapped',
+			]);
+			$this->pdo()->commit();
+			return ['state' => 'snapped', 'orig' => $currentPriority];
+		} catch (Throwable $e) {
+			if ($this->pdo()->inTransaction()) {
+				$this->pdo()->rollBack();
+			}
+			return ['state' => 'error', 'orig' => null];
+		}
+	}
+
+	/** The recorded original priority for a feed, or null if none. */
+	public function origFor(int $feedId): ?int
+	{
+		try {
+			$st = $this->pdo()->prepare('SELECT orig_priority FROM feed_snap WHERE feed_id = :id');
+			$st->execute([':id' => $feedId]);
+			$v = $st->fetchColumn();
+			return ($v === false || $v === null) ? null : (int)$v;
+		} catch (Throwable $e) {
+			return null;
+		}
+	}
+
+	/** Record that the write for this feed was confirmed on disk. */
+	public function confirmApplied(int $feedId): void
+	{
+		try {
+			$this->pdo()->prepare('UPDATE feed_snap SET note = :n WHERE feed_id = :id')
+				->execute([':n' => 'applied', ':id' => $feedId]);
+		} catch (Throwable $e) {
+			// a note is cosmetic; the snapshot itself is what matters
+		}
+	}
+
+	/** @return list<array{feed_id:int,orig_priority:int}> */
+	public function snapshots(): array
+	{
+		try {
+			$rows = $this->pdo()->query('SELECT feed_id, orig_priority FROM feed_snap ORDER BY feed_id')->fetchAll();
+		} catch (Throwable $e) {
+			return [];
+		}
+		$out = [];
+		foreach ($rows as $r) {
+			$out[] = ['feed_id' => (int)$r['feed_id'], 'orig_priority' => (int)$r['orig_priority']];
+		}
+		return $out;
+	}
+
+	/** Drop one snapshot row after its value has been restored. */
+	public function forgetSnapshot(int $feedId): void
+	{
+		try {
+			$this->pdo()->prepare('DELETE FROM feed_snap WHERE feed_id = :id')->execute([':id' => $feedId]);
+		} catch (Throwable $e) {
+			// leave it: a stale row is retried on the next pass
+		}
+	}
 
 	public function getMeta(string $key, string $default = ''): string
 	{

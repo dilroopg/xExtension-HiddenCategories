@@ -57,6 +57,13 @@ class HiddenCategoriesExtension extends Minz_Extension
 		// data), so the payload cannot grow with subscription count.
 		$this->registerHook(Minz_HookType::JsVars, [$this, 'injectJsVars']);
 
+		// Re-enabling in Strict must re-apply the hiding: after a disable the
+		// feeds were restored to visible, so without this the extension comes
+		// back claiming Strict while writing nothing. Runs at most once per
+		// request and does no writes when nothing drifted (the common case), so
+		// it is a cheap comparison, not a sweep of 1000 feeds.
+		$this->reconcileIfNeeded();
+
 		// Both files are optional by design: the CSS does the hiding from the
 		// data attribute, the JS adds convenience (sidebar section, menus). If
 		// either fails to load, hiding still works. The CSS is registered here in
@@ -170,9 +177,22 @@ class HiddenCategoriesExtension extends Minz_Extension
 				. 'so nothing was restored. The extension was left enabled.';
 		}
 
-		$result = $this->store()->restoreAllForDisable();
-		if (!$result['ok']) {
-			return 'Hidden Categories: ' . $result['message'] . ' Nothing was changed and the '
+		// Restore every feed this extension changed. The sweep compares against
+		// the hidden set and the mode, so running it with the mode forced to
+		// light-equivalent semantics is exactly "put everything back":
+		// temporarily switch the stored mode off, sweep, and switch it back so
+		// re-enabling comes back in Strict as the user left it.
+		$mode = $this->store()->mode();
+		if ($mode === 'strict') {
+			$this->store()->setMode('light');      // makes the sweep restore-only
+		}
+		$sweep = $this->sweepFeeds();
+		if ($mode === 'strict') {
+			$this->store()->setMode($mode);        // remember it for next enable
+		}
+
+		if (!$sweep['ok']) {
+			return 'Hidden Categories: ' . $sweep['message'] . '. Nothing was changed and the '
 				. 'extension was left enabled so it can be fixed from its settings page.';
 		}
 		$this->store()->checkpoint('disabled');
@@ -205,6 +225,245 @@ class HiddenCategoriesExtension extends Minz_Extension
 	public function effectiveView(): string
 	{
 		return $this->sessionUnlocked() ? $this->store()->view() : 'hidden';
+	}
+
+	/**
+	 * Converge the feed settings to the hidden set, and prove it.
+	 *
+	 * This is the only function that writes `priority`. Everything that can
+	 * change the desired state calls it: hiding, unhiding, switching to Strict,
+	 * switching away from Strict, and enabling/disabling. One implementation
+	 * means the buttons, the sweep and the uninstall path cannot disagree.
+	 *
+	 * In Light mode it only RESTORES (any stale snapshots from a previous
+	 * Strict session get put back and dropped); it never writes a new value.
+	 *
+	 * $apply = false performs the same walk without writing anything, for the
+	 * dry-run/diagnostic path.
+	 *
+	 * @return array{ok:bool,enforced:int,restored:int,skipped:int,failed:int,message:string}
+	 */
+	public function sweepFeeds(bool $apply = true): array
+	{
+		$store = $this->store();
+		$strict = $store->mode() === 'strict';
+		$hiddenIds = $store->hiddenIds();
+		$enforced = 0;
+		$restored = 0;
+		$skipped = 0;
+		$failed = 0;
+
+		// feed id -> current priority, and feed id -> category, read once
+		$current = [];
+		$categoryOf = [];
+		try {
+			foreach (FreshRSS_Factory::createFeedDao()->selectAll() as $feed) {
+				$id = (int)$feed['id'];
+				$current[$id] = (int)$feed['priority'];
+				$categoryOf[$id] = (int)$feed['category'];
+			}
+		} catch (Throwable $e) {
+			return ['ok' => false, 'enforced' => 0, 'restored' => 0, 'skipped' => 0, 'failed' => 0,
+				'message' => 'could not read feeds: ' . $e->getMessage()];
+		}
+
+		// ---- 1. restore anything that should no longer be enforced ---------
+		// Covers: unhidden, moved out of a hidden category, deleted, or Light
+		// mode. Runs FIRST so a feed moved out is restored before anything else
+		// touches it.
+		foreach ($store->snapshots() as $snap) {
+			$feedId = $snap['feed_id'];
+			$stillHidden = $strict && isset($categoryOf[$feedId]) && in_array($categoryOf[$feedId], $hiddenIds, true);
+			if ($stillHidden) {
+				continue;                      // stays enforced, handle in pass 2
+			}
+			if (!isset($categoryOf[$feedId])) {
+				// feed no longer exists: drop the snapshot, nothing to restore
+				if ($apply) { $store->forgetSnapshot($feedId); }
+				$skipped++;
+				continue;
+			}
+			if (!$apply) {
+				$restored++;
+				continue;
+			}
+			$ok = $this->writePriority($feedId, $snap['orig_priority']);
+			if (!$ok) {
+				$failed++;
+				continue;
+			}
+			$store->forgetSnapshot($feedId);
+			$restored++;
+		}
+
+		// ---- 2. enforce every feed in a hidden category --------------------
+		if ($strict) {
+			foreach ($hiddenIds as $catId) {
+				foreach ($categoryOf as $feedId => $cid) {
+					if ($cid !== $catId) {
+						continue;
+					}
+					$prio = $current[$feedId] ?? null;
+					if ($prio === null) {
+						continue;
+					}
+					// already category-only and not ours: leave it untouched
+					if ($prio === HiddenCategoriesStore::PRIORITY_HIDDEN) {
+						$skipped++;
+						continue;
+					}
+					// already snapshotted (pass 1 kept it): re-apply if drifted
+					$known = $store->origFor($feedId);
+					if ($known === null) {
+						$r = $store->enforceFeed($feedId, $prio);
+						if ($r['state'] === 'preset') { $skipped++; continue; }
+						if ($r['state'] === 'error') { $failed++; continue; }
+					}
+					if (!$apply) { $enforced++; continue; }
+					if (!$this->writePriority($feedId, HiddenCategoriesStore::PRIORITY_HIDDEN)) {
+						$failed++;
+						// the snapshot is wrong if the write failed before any
+						// change; drop it so a later run re-snapshots cleanly
+						$store->forgetSnapshot($feedId);
+						continue;
+					}
+					$store->confirmApplied($feedId);
+					$enforced++;
+				}
+			}
+		}
+
+		if ($failed > 0) {
+			return ['ok' => false, 'enforced' => $enforced, 'restored' => $restored,
+				'skipped' => $skipped, 'failed' => $failed,
+				'message' => $failed . ' feed(s) could not be updated'];
+		}
+		return ['ok' => true, 'enforced' => $enforced, 'restored' => $restored,
+			'skipped' => $skipped, 'failed' => 0, 'message' => ''];
+	}
+
+	/** One line describing what a sweep did, for the notification. */
+	private function sweepMessage(array $sweep): string
+	{
+		$sweep += ['enforced' => 0, 'restored' => 0, 'skipped' => 0, 'failed' => 0];
+		$bits = [];
+		if ($sweep['enforced'] > 0) {
+			$bits[] = $sweep['enforced'] . ' feed(s) now hidden from the main stream';
+		}
+		if ($sweep['restored'] > 0) {
+			$bits[] = $sweep['restored'] . ' feed(s) restored';
+		}
+		if ($sweep['skipped'] > 0) {
+			$bits[] = $sweep['skipped'] . ' already in that state';
+		}
+		if ($sweep['failed'] > 0) {
+			$bits[] = $sweep['failed'] . ' FAILED';
+		}
+		if ($bits === []) {
+			return '';
+		}
+		return ' (' . implode(', ', $bits) . ')';
+	}
+
+	/**
+	 * Write one feed's priority and confirm it landed.
+	 *
+	 * Uses FreshRSS's own DAO rather than raw SQL so the write goes through the
+	 * same path the UI uses, including any bookkeeping the DAO does. The value is
+	 * re-read afterwards: a write that returns without an error but did not
+	 * change the row is treated as a failure, because a silent no-op here means
+	 * the feed stays visible while the UI claims it is hidden.
+	 */
+	private function writePriority(int $feedId, int $priority): bool
+	{
+		try {
+			FreshRSS_Factory::createFeedDao()->updateFeed($feedId, ['priority' => $priority]);
+		} catch (Throwable $e) {
+			Minz_Log::warning('HiddenCategories: priority write failed for feed ' . $feedId . ': ' . $e->getMessage());
+			return false;
+		}
+		try {
+			$feed = FreshRSS_Factory::createFeedDao()->searchById($feedId);
+			return $feed !== null && (int)$feed->priority() === $priority;
+		} catch (Throwable $e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Run the sweep only when something can actually have drifted, so a normal
+	 * page load costs one cheap comparison rather than a 1000-feed walk.
+	 *
+	 * It is needed in exactly these cases:
+	 *   - Strict with hidden categories but no snapshots (re-enabled, or a
+	 *     hidden category gained feeds since the last sweep)
+	 *   - snapshots exist but that feed is no longer in a hidden category
+	 *
+	 * Both are answered from the store + one feed count, never by writing.
+	 */
+	private function reconcileIfNeeded(): void
+	{
+		try {
+			$store = $this->store();
+			if (!$store->available()) {
+				return;
+			}
+			if ($store->mode() !== 'strict') {
+				// Light: only ever needs to restore leftovers, which only exist
+				// if a previous Strict run was interrupted.
+				if ($store->snapshotCount() > 0) {
+					$this->sweepFeeds();
+				}
+				return;
+			}
+
+			$hidden = $store->hiddenIds();
+			if ($hidden === []) {
+				if ($store->snapshotCount() > 0) {
+					$this->sweepFeeds();
+				}
+				return;
+			}
+
+			// Strict with things hidden: does every feed in a hidden category
+			// already have a snapshot? Count them in one query rather than
+			// walking the feed table.
+			$missing = $this->feedsMissingSnapshot($hidden);
+			if ($missing > 0 || $store->snapshotCount() === 0) {
+				$this->sweepFeeds();
+			}
+		} catch (Throwable $e) {
+			// A reconcile failure must never break a page render.
+			Minz_Log::warning('HiddenCategories: reconcile skipped: ' . $e->getMessage());
+		}
+	}
+
+	/**
+	 * How many feeds sit in a hidden category without a snapshot.
+	 *
+	 * One selectAll() pass over the feed table (the same call the sidebar and
+	 * the settings page already make), no per-feed query, no writes. It exists
+	 * only to decide whether a sweep is worth running; the sweep itself does the
+	 * real work.
+	 *
+	 * @param list<int> $hiddenIds
+	 */
+	private function feedsMissingSnapshot(array $hiddenIds): int
+	{
+		if ($hiddenIds === []) {
+			return 0;
+		}
+		try {
+			$total = 0;
+			foreach (FreshRSS_Factory::createFeedDao()->selectAll() as $feed) {
+				if (in_array((int)$feed['category'], $hiddenIds, true)) {
+					$total++;
+				}
+			}
+			return max(0, $total - $this->store()->snapshotCount());
+		} catch (Throwable $e) {
+			return 0;
+		}
 	}
 
 	/** Lazily built store, rooted in this user's own extension data directory. */
@@ -303,11 +562,19 @@ class HiddenCategoriesExtension extends Minz_Extension
 				$result = $act === 'hide'
 					? $this->store()->hideCategory($catId, $name)
 					: $this->store()->unhideCategory($catId, $name);
-				if ($result['ok']) {
-					Minz_Request::good($result['message'], $this->selfUrl());
-				} else {
+				if (!$result['ok']) {
 					Minz_Request::bad($result['message'], $this->selfUrl());
+					return;
 				}
+				// converge the feeds to the new definition (no-op in Light except
+				// for restoring anything left over from a previous Strict run)
+				$sweep = $this->sweepFeeds();
+				$extra = $this->sweepMessage($sweep);
+				if (!$sweep['ok']) {
+					Minz_Request::bad($result['message'] . ' But ' . $extra, $this->selfUrl());
+					return;
+				}
+				Minz_Request::good($result['message'] . $extra, $this->selfUrl());
 				return;
 
 			case 'only':
@@ -418,11 +685,19 @@ class HiddenCategoriesExtension extends Minz_Extension
 					return;
 				}
 				$result = $this->store()->setMode(trim($mode));
-				if ($result['ok']) {
-					Minz_Request::good($result['message'], $this->selfUrl());
-				} else {
+				if (!$result['ok']) {
 					Minz_Request::bad($result['message'], $this->selfUrl());
+					return;
 				}
+				// Strict -> Light restores every enforced feed; Light -> Strict
+				// enforces every hidden category. One sweep either way.
+				$sweep = $this->sweepFeeds();
+				$extra = $this->sweepMessage($sweep);
+				if (!$sweep['ok']) {
+					Minz_Request::bad($result['message'] . ' But ' . $extra, $this->selfUrl());
+					return;
+				}
+				Minz_Request::good($result['message'] . $extra, $this->selfUrl());
 				return;
 
 			/**
@@ -431,10 +706,21 @@ class HiddenCategoriesExtension extends Minz_Extension
 			 * disagree. Safe to press repeatedly.
 			 */
 			case 'restore':
-				$result = $this->store()->restoreAllForDisable();
+				// Same routine as a mode switch to Light: restore every feed this
+				// extension changed. Deliberately does NOT unhide anything — the
+				// hidden set is the user's choice, this only undoes feed writes.
+				$storedMode = $this->store()->mode();
+				if ($storedMode === 'strict') {
+					$this->store()->setMode('light');
+				}
+				$result = $this->sweepFeeds();
+				if ($storedMode === 'strict') {
+					$this->store()->setMode($storedMode);
+				}
 				if ($result['ok']) {
+					$detail = $this->sweepMessage($result);
 					Minz_Request::good(
-						'Restore finished: ' . $result['message'] . '. No feeds were changed by this extension.',
+						'Restore finished' . ($detail === '' ? ': nothing needed restoring.' : ':' . $detail . '.'),
 						$this->selfUrl()
 					);
 				} else {

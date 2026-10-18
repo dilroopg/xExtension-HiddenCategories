@@ -2,7 +2,7 @@
 	"name": "Hidden Categories",
 	"author": "dilroopg",
 	"description": "Temporarily hide categories from the sidebar and the main stream, with one button to reveal them, see only them, or hide them again. Optionally password-protected. Writes nothing to your feeds.",
-	"version": "0.8.0",
+	"version": "0.9.0",
 	"entrypoint": "HiddenCategories",
 	"type": "user"
 }
