@@ -44,24 +44,47 @@ This is a speed bump against a passer-by clicking the eye. It is **not** securit
 encrypts nothing, and it does not hide feeds from *Subscription management*, which is a
 normal FreshRSS page that always lists every feed.
 
+## Two modes
+
+**Light** (default) — nothing is written. Hidden categories and their articles are filtered
+in your browser only. Your phone, your reader app and the API still show everything.
+
+**Strict** — hiding becomes real everywhere. Feeds in a hidden category get FreshRSS's own
+Visibility setting *Do not show*, so they leave the main stream in every client, including
+phone apps and reader apps. The previous value is saved for each feed and restored when you
+unhide, switch back to Light, or disable the extension.
+
+| | Light | Strict |
+|---|---|---|
+| browser | filtered | filtered |
+| phone / reader app | sees everything | **hidden** |
+| category page | shows the hidden category | **empty until unhidden** |
+| writes to your feeds | none | Visibility per feed, restorable |
+| cost of hiding a big category | instant | ~1.5 s per 188 feeds |
+
+Hiding in Strict does **not** stop fetching: entries keep arriving and still count as
+unread. Unhiding brings the whole backlog back.
+
 ## What it writes
 
-Nothing. In the default mode the extension only filters what your browser displays — no
-feed settings, no categories, no FreshRSS config. Everything it stores lives in its own
-SQLite file under `data/users/<user>/extensions/HiddenCategories/`.
+In **Light** (the default): nothing. Everything it stores lives in its own SQLite file
+under `data/users/<user>/extensions/HiddenCategories/`.
 
-The one mode that would write to feeds (**Strict**, for filtering on every synced client
-such as a phone app) is not implemented yet.
+In **Strict**: one column on the feeds of hidden categories — `priority`, FreshRSS's own
+per-feed Visibility. The previous integer is recorded before every write and put back
+afterwards. Nothing else about a feed is touched: no name, URL, category, favicon or another
+extension's settings.
 
 ## Turning it off
 
-Disabling is clean: nothing was written, so nothing needs undoing — the page returns to
-stock FreshRSS immediately. Your settings (view, hidden set, passcode) stay in the
-extension's own database and come back when you re-enable.
+Switching it off runs the extension's own restore first, then disables it: any feed value it
+changed goes back to what it was before (Strict), and the page returns to stock FreshRSS
+(always true in Light). If the restore cannot complete, the disable is refused and the
+extension stays enabled with its settings page available — so you cannot end up with feeds
+left hidden and no way to reach the control.
 
-FreshRSS calls an extension's `uninstall()` before writing a disable, so the extension also
-gets a chance to restore anything it had written; if it can't, the disable is refused and
-the extension stays enabled with its settings page available.
+Your settings (view, hidden set, mode, passcode) stay in the extension's own database and
+come back when you re-enable. Re-enabling in Strict re-applies the hiding automatically.
 
 ## Requirements
 
