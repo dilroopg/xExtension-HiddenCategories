@@ -215,6 +215,12 @@ file itself to forget everything.
 
 ## Changelog
 
+**1.5.4** — two-word labels wrap instead of being cut off.
+
+The eye button's label was clipped with an ellipsis, so *Only hidden* and *Show all* read as
+*Only hid…*. The text now wraps onto two lines at the space, the way the star button in the
+companion extension does. Stylesheet and label markup only.
+
 **1.5.3** — the button labels now name the destination.
 
 The labels named the *action*, which read ambiguously next to each other: from the normal state the

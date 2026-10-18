@@ -154,8 +154,16 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 }
 .hc-view-btn .hc-txt {
 	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	white-space: normal;
+	line-height: 1.15;
+	text-align: left;
+	/* a narrow shared row must not cut the text off: wrap at the marked break
+	 * ("Only" / "hidden") and let long words break rather than clip */
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+.hc-view-btn .hc-w {
+	display: inline;
 }
 .hc-view-btn[data-hc-state="hidden"] .hc-ico {
 	opacity: 0.65;

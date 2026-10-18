@@ -359,10 +359,16 @@
 			return;
 		}
 		var l = LABELS[view] || LABELS.hidden;
-		// icon = current state, label = next action; kept in two spans so the
-		// icon never has to be re-parsed on every render
-		b.innerHTML = '<span class="hc-ico">' + (ICONS[view] || ICONS.hidden) + '</span>'
-			+ '<span class="hc-txt">' + l.text + '</span>';
+		// icon = current state, label = destination; the label is split into
+		// one span per word so it can wrap inside a narrow shared row
+		// ("Only" / "hidden") instead of clipping. Same machinery as the
+		// star button in the sibling extension.
+		var words = l.text.split(' ');
+		var txt = '<span class="hc-txt">'
+			+ '<span class="hc-w">' + words[0] + '</span>'
+			+ (words.length > 1 ? ' <span class="hc-w">' + words.slice(1).join(' ') + '</span>' : '')
+			+ '</span>';
+		b.innerHTML = '<span class="hc-ico">' + (ICONS[view] || ICONS.hidden) + '</span>' + txt;
 		b.title = l.title;
 		b.setAttribute('data-hc-state', view);
 		b.setAttribute('aria-label', l.text + ' \u2014 ' + l.title);
