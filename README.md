@@ -11,10 +11,22 @@ Nothing is deleted, renamed or moved, and no subscription is ever touched.
 
 ## Install
 
+**Option 1 — git clone** (gets updates with `git pull`):
+
 ```sh
 cd /path/to/FreshRSS/extensions
 git clone https://github.com/dilroopg/xExtension-HiddenCategories.git
 ```
+
+**Option 2 — download the zip**, for servers without git or if you'd rather not clone:
+
+1. Grab `xExtension-HiddenCategories.zip` from the
+   [latest release](https://github.com/dilroopg/xExtension-HiddenCategories/releases/latest).
+2. Unpack it inside `FreshRSS/extensions/`. It contains a single
+   `xExtension-HiddenCategories/` folder — leave that folder intact rather than copying its
+   contents loose into `extensions/`.
+3. To update later, unpack a newer zip over the top of the folder. Your settings and hidden set
+   live outside it (see [Data it stores](#data-it-stores)) and are left untouched.
 
 Then: **Settings → Extensions → Hidden Categories → enable**.
 
