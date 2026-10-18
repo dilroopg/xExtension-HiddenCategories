@@ -107,6 +107,11 @@ class HiddenCategoriesExtension extends Minz_Extension
 			// the lock button is only offered when a passcode exists, so it can
 			// never lead to a dead end
 			'lockAvailable' => $this->store()->hasPasscode(),
+			// how the sidebar row labels itself. Display only — neither value
+			// changes what is hidden or enforced, so they are safe to send to
+			// the page even while locked.
+			'showCount' => $this->store()->showCount(),
+			'showLabel' => $this->store()->showLabel(),
 			// names+counts for the hidden ones only — a hidden category with no
 			// row in this map is named by its id, never by a guess
 			'meta' => array_filter($counts, static fn ($id) => in_array($id, $cats, true), ARRAY_FILTER_USE_KEY),
@@ -774,6 +779,31 @@ class HiddenCategoriesExtension extends Minz_Extension
 			 * runs on toggle-off, so the button and the toggle can never
 			 * disagree. Safe to press repeatedly.
 			 */
+			case 'display':
+				// The two sidebar display switches. Each is posted as its own
+				// checkbox, and an unchecked box sends nothing at all — so the
+				// REQUEST ITSELF says which one was on the form, otherwise
+				// saving one switch would silently reset the other. 'what'
+				// names the switch being changed.
+				$what = Minz_Request::paramStringNull('what', true);
+				if ($what !== 'count' && $what !== 'label') {
+					Minz_Request::bad('Save failed: the form did not say which option to change, so nothing was changed.', $this->selfUrl());
+					return;
+				}
+				$on = Minz_Request::paramStringNull('on', true) === '1';
+				if ($what === 'count') {
+					$r = $this->store()->setShowCount($on);
+				} else {
+					// Refused while the count is off; the store says why.
+					$r = $this->store()->setShowLabel($on);
+				}
+				if ($r['ok']) {
+					Minz_Request::good($r['message'], $this->selfUrl());
+				} else {
+					Minz_Request::bad($r['message'], $this->selfUrl());
+				}
+				return;
+
 			case 'restore':
 				// Same routine as a mode switch to Light: restore every feed this
 				// extension changed. Deliberately does NOT unhide anything — the

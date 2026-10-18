@@ -85,9 +85,19 @@ are the ones you'd hidden:
 
 Clicking again from `only` returns you to `hidden`, which re-applies the hiding.
 
-The row at the bottom of the sidebar shows **just a number** — how many categories are hidden, with
-no wording. Someone glancing at the screen isn't told there's anything to find. The full text is in
-the row's tooltip; click it to open the list.
+The row at the bottom of the sidebar shows **how many categories are hidden**, labelled
+`Hidden 7` by default. Both halves can be switched off under **Sidebar** in the settings:
+
+| switch | on (default) | off |
+|---|---|---|
+| **Show how many categories are hidden** | the number is drawn | nothing but the caret — no number, no word |
+| **"Hidden" label in front of the number** | `Hidden 7` | `7` on its own |
+
+The second switch is greyed out while the count is off, since a label with no number is just a
+stray word. Neither switch changes what is hidden, what Strict enforces, or the eye button — they
+only change this row's text. The row itself always stays: it's how you open the list, and the
+full text is in its tooltip. With the count switched off, someone glancing at the screen learns
+nothing from it.
 
 ## What "private" covers — and what it doesn't
 
@@ -169,9 +179,10 @@ Visibility. The previous value is recorded before every write and put back after
 else about a feed is touched: no name, URL, category, favicon, or another extension's settings.
 Nothing is written to FreshRSS's own database or config.
 
-That database holds three tables: `meta` (view, mode, passcode, lock state), `hidden_cat` (which
-categories are hidden) and `feed_snap` (the Visibility values recorded so they can be restored).
-Deleting the extension folder leaves the file alone; delete the file itself to forget everything.
+That database holds three tables: `meta` (view, mode, passcode, lock state, the two sidebar display
+switches), `hidden_cat` (which categories are hidden) and `feed_snap` (the Visibility values
+recorded so they can be restored). Deleting the extension folder leaves the file alone; delete the
+file itself to forget everything.
 
 ## Troubleshooting
 

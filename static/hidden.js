@@ -401,11 +401,25 @@
 		title.setAttribute('role', 'button');
 		title.setAttribute('aria-expanded', view === 'hidden' ? 'false' : 'true');
 		title.title = cats.length + ' hidden ' + (cats.length === 1 ? 'category' : 'categories');
+		// Two display switches from the settings page (both default on):
+		//   showCount  the number of hidden categories is drawn
+		//   showLabel  the word "Hidden" sits in front of it
+		// With the count off the row shows nothing but the caret — no number,
+		// no word — so a glance at the screen says nothing. The row stays: it
+		// is still how you expand the list, and the eye button above is
+		// unaffected. The accessible name stays descriptive either way, and so
+		// does the tooltip, so the two never disagree with the label.
+		var showCount = HC.showCount !== false;
+		var showLabel = showCount && HC.showLabel !== false;
+		var labelText = !showCount ? ''
+			: (showLabel ? 'Hidden' : String(cats.length));
+		var numText = (showCount && showLabel) ? String(cats.length) : '';
 		title.innerHTML = '<button class="dropdown-toggle" type="button" title="Expand">'
 			+ '<span class="hc-caret">&#9662;</span></button>'
-			// just the number: the row should not announce that something is
-			// hidden to anyone glancing at the screen
-			+ '<span class="title">' + cats.length + '</span>';
+			+ (labelText === '' ? ''
+				: '<span class="title"><span class="hc-row-label">' + labelText + '</span>'
+					+ (numText === '' ? '' : '<span class="hc-row-num">' + numText + '</span>')
+					+ '</span>');
 
 		var chip = document.createElement('span');
 		chip.className = 'hc-chip';

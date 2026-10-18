@@ -218,6 +218,12 @@ final class HiddenCategoriesStore
 		$this->setMetaIfAbsent('mode', 'light');
 		$this->setMetaIfAbsent('view', 'hidden');
 		$this->setMetaIfAbsent('locked', '0');
+		// display options for the sidebar "Hidden" row. Both are display-only:
+		// they change one row's label, never what is hidden or enforced.
+		//   show_count   '1' draws the number of hidden categories
+		//   show_label   '1' puts the word "Hidden" in front of that number
+		$this->setMetaIfAbsent('show_count', '1');
+		$this->setMetaIfAbsent('show_label', '1');
 	}
 
 	// ---------------------------------------------------------------- lock
@@ -677,6 +683,57 @@ final class HiddenCategoriesStore
 			return ['ok' => false, 'message' => 'Save failed: ' . $e->getMessage() . ' Nothing was changed.'];
 		}
 		return ['ok' => true, 'message' => 'Mode saved: ' . $mode . '.'];
+	}
+
+	// ----------------------------------------------------- display options
+	//
+	// Two switches for the sidebar "Hidden" row only. Both default to ON, which
+	// is the row this extension has always drawn ("Hidden 3"). A store that
+	// predates these keys reads them as ON through the default argument, so an
+	// existing install looks unchanged until the user flips something.
+
+	/** Draw the number of hidden categories in the sidebar row. */
+	public function showCount(): bool
+	{
+		return $this->getMeta('show_count', '1') === '1';
+	}
+
+	/** Put the word "Hidden" in front of that number. */
+	public function showLabel(): bool
+	{
+		return $this->getMeta('show_label', '1') === '1';
+	}
+
+	/**
+	 * @return array{ok:bool,message:string}
+	 */
+	public function setShowCount(bool $on): array
+	{
+		if (!$this->setMeta('show_count', $on ? '1' : '0')) {
+			return ['ok' => false, 'message' => 'Could not save the display option.'];
+		}
+		return ['ok' => true, 'message' => $on
+			? 'The sidebar row shows how many categories are hidden.'
+			: 'The sidebar row no longer shows how many categories are hidden.'];
+	}
+
+	/**
+	 * Refuses to be turned on while the count is off: a label with no number
+	 * behind it would read as a bare word, which is noise rather than privacy.
+	 *
+	 * @return array{ok:bool,message:string}
+	 */
+	public function setShowLabel(bool $on): array
+	{
+		if ($on && !$this->showCount()) {
+			return ['ok' => false, 'message' => 'Turn the count back on first — a label with no number does nothing.'];
+		}
+		if (!$this->setMeta('show_label', $on ? '1' : '0')) {
+			return ['ok' => false, 'message' => 'Could not save the display option.'];
+		}
+		return ['ok' => true, 'message' => $on
+			? 'The sidebar row is labelled "Hidden" again.'
+			: 'The sidebar row shows the number on its own.'];
 	}
 
 	// ---------------------------------------------------------------- reads

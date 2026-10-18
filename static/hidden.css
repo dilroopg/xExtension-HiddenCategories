@@ -179,6 +179,17 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
  * A normal .tree-folder so themes and collapse state apply to it unchanged.
  * Its children are categories, not feeds.
  */
+/* the row's own text: "Hidden" and the count, spaced by the theme's own
+ * label styling. Split in two spans so the count can be dropped without
+ * leaving a dangling word or a stray separator. */
+.hc-tree > .tree-folder-title .hc-row-label,
+.hc-tree > .tree-folder-title .hc-row-num {
+	vertical-align: middle;
+}
+.hc-tree > .tree-folder-title .hc-row-num {
+	margin-left: 0.4em;
+	opacity: 0.75;
+}
 .hc-tree .hc-item {
 	display: flex;
 	align-items: center;
@@ -341,6 +352,27 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	align-items: center;
 	gap: 0.6em;
 	flex-wrap: wrap;
+}
+/* the two sidebar display switches: one row each, checkbox left, hint right */
+.hc-switch-row {
+	display: flex;
+	align-items: center;
+	gap: 0.6em;
+	flex-wrap: wrap;
+	padding: 0.3em 0;
+}
+.hc-switch-row + .hc-switch-row {
+	border-top: 1px solid rgba(128, 128, 128, 0.18);
+}
+.hc-switch {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45em;
+	cursor: pointer;
+	min-width: 17em;
+}
+.hc-switch input:disabled + span {
+	opacity: 0.5;
 }
 
 /* ---- settings page ---------------------------------------------------- */
