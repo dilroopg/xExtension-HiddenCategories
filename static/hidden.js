@@ -286,7 +286,7 @@
 		tree.appendChild(li);
 	}
 
-	// ---- 7. the banner: says the stream is filtered, one click out --------
+	// ---- 7a. the banner: says the stream is filtered, one click out -------
 	function buildBanner() {
 		if (view !== 'only') { return; }
 		var stream = document.getElementById('stream');
@@ -310,7 +310,7 @@
 	}
 
 
-	// ---- 7. subscription management: a Hide button per category box -------
+	// ---- 7b. subscription management: a Hide button per category box -----
 	//
 	// subscription/index.phtml renders one div.box per category, and its
 	// ul.box-content carries data-cat-id — a stable hook, so the button is a
@@ -348,7 +348,79 @@
 		}
 	}
 
-	// ---- 8. keep markers correct as the page changes ----------------------
+	// ---- 8. right-click a category -----------------------------------------
+	//
+	// This item is CONTRIBUTED TO RightClickActions, not provided by us. With
+	// RCA installed its context menu is the one that opens; we append our item
+	// to it. Without RCA there is no right-click menu on the page at all, so
+	// there is nothing to append to and nothing is missing — every other way of
+	// hiding (sidebar button, subscription box, settings list) is unaffected.
+	//
+	// Deliberately NO fallback menu: growing our own would duplicate RCA's UI,
+	// drift from its look, and be one more surface to break. If #frss-ctx-menu
+	// is absent when the event fires, we do nothing.
+	function rcaMenu() {
+		return document.getElementById('frss-ctx-menu');
+	}
+
+	function catIdFromRow(el) {
+		var row = el && el.closest ? el.closest('li.tree-folder.category') : null;
+		if (!row || !row.id || row.id.indexOf('c_') !== 0) { return 0; }
+		var id = parseInt(row.id.slice(2), 10);
+		return id > 0 ? id : 0;
+	}
+
+	function attachRightClick() {
+		// capture phase: RCA builds its menu synchronously in its own handler,
+		// so by the time ours runs (on the same event, after theirs) the menu
+		// exists and we can append into it.
+		document.addEventListener('contextmenu', function (ev) {
+			var row = ev.target && ev.target.closest ? ev.target.closest('.tree-folder-title') : null;
+			if (!row) { return; }
+			var id = catIdFromRow(row);
+			if (!id) { return; }
+
+			// RCA builds its menu in the same tick; give it one microtask so our
+			// append cannot land on a menu it is about to replace.
+			window.setTimeout(function () {
+				var menu = rcaMenu();
+				if (!menu || menu.querySelector('.hc-ctx-item')) { return; }
+
+				var hid = !!isHidden[id];
+				var info = meta[id] || {};
+
+				var sep = document.createElement('div');
+				sep.className = 'hc-ctx-sep';
+				sep.style.cssText = 'height:1px;margin:4px 0;background:rgba(128,128,128,.3)';
+
+				var item = document.createElement('div');
+				item.className = 'hc-ctx-item';
+				item.setAttribute('role', 'menuitem');
+				item.style.cssText = 'padding:6px 14px;cursor:pointer;display:flex;gap:8px;align-items:center';
+				item.innerHTML = '<span aria-hidden="true">' + (hid ? '\u25CB' : '\u25CF') + '</span>'
+					+ '<span>' + (hid ? 'Unhide category' : 'Hide category') + '</span>'
+					+ (info.feeds != null ? '<span style="opacity:.5;font-size:.85em;margin-left:auto">'
+						+ info.feeds + '</span>' : '');
+				item.addEventListener('mouseenter', function () {
+					item.style.background = 'rgba(128,128,128,.2)';
+				});
+				item.addEventListener('mouseleave', function () {
+					item.style.background = '';
+				});
+				item.addEventListener('click', function (ev2) {
+					ev2.preventDefault();
+					ev2.stopPropagation();
+					if (menu && menu.parentNode) { menu.style.display = 'none'; }
+					post({ act: hid ? 'unhide' : 'hide', cat: id });
+				});
+
+				menu.appendChild(sep);
+				menu.appendChild(item);
+			}, 0);
+		}, true);
+	}
+
+	// ---- 9. keep markers correct as the page changes ----------------------
 	//
 	// Infinite scroll and "load more" append new .flux nodes. One observer that
 	// only marks newly added items is cheaper than a polling loop and cannot
@@ -375,6 +447,7 @@
 		buildHiddenSection();
 		buildBanner();
 		buildSubscriptionButtons();
+		attachRightClick();
 		watch();
 	}
 
