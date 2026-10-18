@@ -92,7 +92,7 @@ The row at the bottom of the sidebar labels itself with one of three display sta
 |---|---|
 | **Nothing but the caret** | no text at all — the row is just its disclosure arrow |
 | **The number only** | `7` |
-| **Label and number** | `Not Seen 7` (default label is `Hidden`) |
+| **Label and number** | `Hidden 7` (any text; default label is `Hidden`) |
 
 The label under **Label text** is used by the third state and is kept when you switch away from it,
 so moving between states never loses what you typed. An empty label in the third state falls back
