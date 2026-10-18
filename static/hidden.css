@@ -113,8 +113,11 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	background: rgba(128, 128, 128, 0.18);
 }
 
-/* ---- the one button, above the sidebar tree --------------------------- */
-.hc-bar {
+/* ---- the one button, above the sidebar tree ---------------------------
+ * The bar itself is shared ground (see .rs-bar-row below): it is created by
+ * whichever extension gets there first and every control appends into it.
+ */
+.rs-bar {
 	padding: 0.35em 0.6em 0.45em;
 }
 .hc-view-btn {
@@ -254,15 +257,29 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	font-size: 0.88em;
 }
 
-/* ---- the lock: button row, unlock form, settings card ----------------- */
-.hc-bar-row {
+/* ---- the lock: button row, unlock form, settings card -----------------
+ * THE SHARED ROW. Nothing here names another extension: the row sizes its
+ * children generically, so one control takes the whole width and two split
+ * it evenly with the gap between them. That gap is also what keeps two
+ * different-purpose buttons from being a misclick apart. Widened from
+ * 0.35em for exactly that reason.
+ */
+.rs-bar-row {
 	display: flex;
 	align-items: stretch;
-	gap: 0.35em;
+	gap: 0.5em;
 }
-.hc-bar-row .hc-view-btn {
-	flex: 1 1 auto;
-	width: auto;
+/* the generic sizing rule: every direct control in a shared row grows
+ * equally. One child -> full width (unchanged look when this extension is
+ * installed alone); two or more -> equal shares. */
+.rs-bar-row > * {
+	flex: 1 1 0;
+	min-width: 0;
+}
+/* controls that must not grow (the lock icon button) keep their own size */
+.rs-bar-row > .hc-lock-btn,
+.rs-bar-row > .hc-lock-btn-wide {
+	flex: 0 0 auto;
 }
 .hc-lock-btn {
 	flex: 0 0 auto;

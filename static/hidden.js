@@ -268,20 +268,27 @@
 	};
 
 	function buildButton() {
-		var bar = document.getElementById('hc-sidebar-bar');
+		// The bar is SHARED GROUND, not ours: any extension that wants a
+		// control above the sidebar tree appends into this one row, and the row
+		// sizes its children generically (see .rs-bar-row in the stylesheet).
+		// So the id is deliberately neutral and nothing here assumes it owns
+		// the row: get-or-create, then append. Alone that leaves one button at
+		// full width; with another extension present it splits, and neither
+		// side has to know the other exists.
+		var bar = document.getElementById('rs-bar');
 		if (!bar) {
 			var tree = document.querySelector('nav#sidebar .tree') || document.querySelector('.tree');
 			if (!tree) { return; }
 			bar = document.createElement('div');
-			bar.id = 'hc-sidebar-bar';
-			bar.className = 'hc-bar';
+			bar.id = 'rs-bar';
+			bar.className = 'rs-bar';
 			// sits directly above the tree, so it is the first thing in reach
 			tree.parentNode.insertBefore(bar, tree);
 			var wrap = document.createElement('div');
-			wrap.className = 'hc-bar-row';
+			wrap.className = 'rs-bar-row';
 			bar.appendChild(wrap);
 		}
-		var btnWrap = bar.querySelector('.hc-bar-row');
+		var btnWrap = bar.querySelector('.rs-bar-row');
 		if (!btnWrap) { return; }
 		// The bar stays visible if there is ANYTHING to act on: hidden things to
 		// reveal, or a passcode (so you can lock before hiding anything). Hiding

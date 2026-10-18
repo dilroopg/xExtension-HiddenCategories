@@ -2,7 +2,7 @@
 	"name": "Hidden Categories",
 	"author": "dilroopg",
 	"description": "Temporarily hide categories from the sidebar and main stream. One button cycles hidden / revealed / only-hidden, with a sidebar row whose label and count can each be switched off. Light filters in the browser and writes nothing; Strict hides feeds on every synced client. Optional passcode lock.",
-	"version": "1.4.3",
+	"version": "1.4.4",
 	"entrypoint": "HiddenCategories",
 	"type": "user"
 }
