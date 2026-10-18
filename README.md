@@ -75,21 +75,21 @@ The eye *is* the button, and its icon shows which view you're in. Clicking cycle
 <tr>
 <td align="center" width="33%">
 
-<img alt="closed eye" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='44' height='44' fill='none' stroke='%235cc46a' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3l18 18'/%3E%3Cpath d='M10.6 6.2A9.7 9.7 0 0 1 12 6c5 0 9 4.5 9 6 0 .8-.9 2.3-2.4 3.6'/%3E%3Cpath d='M6.2 7.7C4.1 9.1 3 10.6 3 12c0 1.5 4 6 9 6 1.4 0 2.7-.3 3.9-.9'/%3E%3Cpath d='M9.9 10.1a3 3 0 0 0 4.2 4.2'/%3E%3C/svg%3E">
+<img alt="closed eye" src="docs/eye-hidden.svg">
 
 **hidden**
 
 </td>
 <td align="center" width="33%">
 
-<img alt="peeking eye" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='44' height='44' fill='none' stroke='%235cc46a' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='2.6'/%3E%3Cpath d='M4 19.5c5-3.5 11-3.5 16 0'/%3E%3C/svg%3E">
+<img alt="peeking eye" src="docs/eye-revealed.svg">
 
 **revealed**
 
 </td>
 <td align="center" width="33%">
 
-<img alt="open eye" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='44' height='44' fill='none' stroke='%235cc46a' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3.2' fill='%235cc46a' stroke='none'/%3E%3C/svg%3E">
+<img alt="open eye" src="docs/eye-only.svg">
 
 **only**
 
@@ -111,7 +111,7 @@ In the **revealed** and **only** views each hidden category in the sidebar carri
 `HIDDEN` label after its name, so you can tell at a glance which ones are the hidden ones:
 
 <p>
-<img alt="hidden category tag" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 210 40' width='210' height='40'%3E%3Crect width='210' height='40' fill='%23222'/%3E%3Ctext x='10' y='26' font-family='sans-serif' font-size='15' fill='%23ddd'%3EComics%3C/text%3E%3Crect x='78' y='12' width='58' height='17' rx='3' fill='%23444'/%3E%3Ctext x='86' y='25' font-family='sans-serif' font-size='10' letter-spacing='1' fill='%23bbb'%3EHIDDEN%3C/text%3E%3C/svg%3E">
+<img alt="hidden category tag" src="docs/hidden-tag.svg">
 </p>
 
 Clicking again from `only` returns you to `hidden`, which re-applies the hiding.
@@ -147,7 +147,7 @@ don't want them clicking the eye. Set a passcode in the settings and a red lock 
 beside the eye:
 
 <p>
-<img alt="red lock button" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' width='40' height='40'%3E%3Crect x='0.75' y='0.75' width='38.5' height='38.5' rx='4' fill='%23222' stroke='%23555'/%3E%3Cg fill='none' stroke='%23e06c5a' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round' transform='translate(8,8)'%3E%3Crect x='4.5' y='10.5' width='15' height='10' rx='2'/%3E%3Cpath d='M8 10.5V7.5a4 4 0 0 1 8 0v3'/%3E%3C/g%3E%3C/svg%3E">
+<img alt="red lock button" src="docs/lock-button.svg">
 </p>
 
 It is **deliberately weak**, and that's a choice, not an oversight — stored in **plain text** and
