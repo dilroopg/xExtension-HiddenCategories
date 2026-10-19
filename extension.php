@@ -262,7 +262,26 @@ class HiddenCategoriesExtension extends Minz_Extension
 		foreach ($store->snapshots() as $snap) {
 			$held[$snap['feed_id']] = $snap['orig_priority'];
 		}
+		// Which of those feeds still exist. A snapshot whose feed has been
+		// deleted since describes nothing: writing its priority back to a row
+		// that is gone fails, and counting that as a failure aborted this whole
+		// pass — so the caller enforced nothing and every feed stayed visible.
+		// Drop those rows instead of failing on them.
+		$live = [];
+		try {
+			foreach (FreshRSS_Factory::createFeedDao()->selectAll() as $feed) {
+				$live[(int)$feed['id']] = true;
+			}
+		} catch (Throwable $e) {
+			return ['ok' => false, 'enforced' => 0, 'restored' => 0,
+				'skipped' => 0, 'failed' => 0,
+				'message' => 'could not read feeds: ' . $e->getMessage()];
+		}
 		foreach ($held as $feedId => $orig) {
+			if (!isset($live[$feedId])) {
+				$store->forgetSnapshot($feedId);   // feed is gone, row is noise
+				continue;
+			}
 			if (!$this->writePriority($feedId, $orig)) {
 				$failed++;
 				continue;
@@ -377,7 +396,25 @@ class HiddenCategoriesExtension extends Minz_Extension
 		$store = $this->store();
 		$restored = 0;
 		$failed = 0;
-		foreach ($store->inverseSnapshots() as $snap) {
+		$snaps = $store->inverseSnapshots();
+		if ($snaps === []) {
+			return ['restored' => 0, 'failed' => 0];
+		}
+		// Same rule as suspendEnforcement(): a demoted feed that has since been
+		// deleted cannot be written back, and that must not read as a failure.
+		$live = [];
+		try {
+			foreach (FreshRSS_Factory::createFeedDao()->selectAll() as $feed) {
+				$live[(int)$feed['id']] = true;
+			}
+		} catch (Throwable $e) {
+			return ['restored' => 0, 'failed' => count($snaps)];
+		}
+		foreach ($snaps as $snap) {
+			if (!isset($live[$snap['feed_id']])) {
+				$store->forgetInverseSnapshot($snap['feed_id']);
+				continue;
+			}
 			if (!$this->writePriority($snap['feed_id'], $snap['orig_priority'])) {
 				$failed++;
 				continue;
@@ -625,10 +662,18 @@ class HiddenCategoriesExtension extends Minz_Extension
 	/**
 	 * How many feeds sit in a hidden category without a snapshot.
 	 *
+	 * Counted per feed, NOT as "feeds in hidden categories minus snapshot rows":
+	 * that subtraction was negative whenever the table held snapshots for feeds
+	 * the user had since deleted, and a negative answer meant this never asked
+	 * for a sweep again — so a feed later added to a hidden category stayed
+	 * visible until some other action forced one.
+	 *
 	 * One selectAll() pass over the feed table (the same call the sidebar and
 	 * the settings page already make), no per-feed query, no writes. It exists
 	 * only to decide whether a sweep is worth running; the sweep itself does the
-	 * real work.
+	 * real work. A feed that was already at -10 before this extension touched
+	 * it is counted here every time and is then skipped by the sweep, which
+	 * costs one comparison and writes nothing.
 	 *
 	 * @param list<int> $hiddenIds
 	 */
@@ -638,13 +683,18 @@ class HiddenCategoriesExtension extends Minz_Extension
 			return 0;
 		}
 		try {
-			$total = 0;
+			$snapped = [];
+			foreach ($this->store()->snapshots() as $snap) {
+				$snapped[$snap['feed_id']] = true;
+			}
+			$missing = 0;
 			foreach (FreshRSS_Factory::createFeedDao()->selectAll() as $feed) {
-				if (in_array((int)$feed['category'], $hiddenIds, true)) {
-					$total++;
+				$id = (int)$feed['id'];
+				if (in_array((int)$feed['category'], $hiddenIds, true) && !isset($snapped[$id])) {
+					$missing++;
 				}
 			}
-			return max(0, $total - $this->store()->snapshotCount());
+			return $missing;
 		} catch (Throwable $e) {
 			return 0;
 		}

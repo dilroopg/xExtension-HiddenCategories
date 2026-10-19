@@ -161,7 +161,11 @@ nothing from it.
 Worth reading once, so you know what you're relying on.
 
 **It does:** keep the category and its articles off your screen — out of the sidebar and main
-stream, and in Strict out of the API that your phone and reader apps talk to.
+stream, and in Strict out of the API that your phone and reader apps talk to. Each feed inside a
+hidden category is marked *Do not show*, which is the strongest thing FreshRSS can say, so apps
+that read that setting (feedlist, unread counts, articles) drop the feeds. Apps that keep their own
+cached copy of your category tree may keep showing an **empty folder** until they rebuild that
+cache — see the troubleshooting note below.
 
 **It doesn't:**
 
@@ -272,13 +276,26 @@ folder, the file stays behind; delete the file itself to forget everything.
 
 ## What's new
 
-Version 1.5.5 renames the eye button's label so that it describes the view you are in. The full
-history is in [CHANGELOG.md](CHANGELOG.md), and every release is on the
+Version 1.5.9 fixes Strict quietly failing after you delete a feed: the restore pass counted a write
+to a feed that no longer exists as a failure and stopped before enforcing anything, which left the
+*Just Hidden* view doing nothing server-side. The full history is in
+[CHANGELOG.md](CHANGELOG.md), and every release is on the
 [releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
 
 ## Troubleshooting
 
 **Hiding does nothing on my phone.** You are in Light mode. Switch to Strict.
+
+**A reader app still shows the category, with no feeds in it.** This is the app's own cache, not
+FreshRSS. Strict hides *feeds*, one at a time — it is the only lever a server has here. A fully
+hidden category therefore sends no feeds at all, and an app that stores your category tree locally
+can keep an empty folder until it rebuilds that tree.
+
+Tested on iOS readers, 2026-10, FreshRSS 1.30.1: **FeedFlow** follows Strict correctly — the
+category and its feeds both go and both come back. **Lire** keeps the category visible with no
+feeds inside. Re-adding the account (or clearing the app's data) forces a rebuild from the current
+feed list, which is the only thing that clears it from our side; there is no setting the extension
+can send to make an app forget a folder.
 
 **A hidden category is empty when I click it.** This is expected in Strict: its feeds are set to
 *Do not show*, which empties the category page too. Unhide the category to read it, or use the
@@ -315,6 +332,9 @@ Written with AI assistance, then tested against a real FreshRSS 1.30.1 install w
 feeds — enable/disable round trips, Strict writes and restores, the three views, and the lock all
 checked against the database rather than assumed — and again on a **blank** FreshRSS 1.30.1, where
 it installed from this release zip, enabled, hid a category, cycled the views and restored cleanly.
+Strict was also checked from an iOS reader over the API: one app dropped the hidden category and its
+feeds and brought them back on unhide, a second kept an empty folder behind (details under
+Troubleshooting). Apps differ; the server-side setting is the same for both.
 
 That's disclosed so you know what you're installing. **Forking and reading the code is
 encouraged.** It's about 2,900 lines across six files and none of it is clever — the parts worth

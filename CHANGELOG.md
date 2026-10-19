@@ -2,6 +2,24 @@
 
 Newest first. These version numbers match the [releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
 
+**1.5.9** — a feed you deleted can no longer switch off Strict.
+
+The Strict pass walks a saved list of "what this feed's visibility was before I changed it". That
+list kept rows for feeds that no longer exist, and writing the saved value back to a deleted feed
+fails. That failure was counted against the whole pass, so a pass that had hundreds of real feeds
+to restore reported itself as failed and stopped before enforcing anything.
+
+Two symptoms came out of it:
+
+- Switching to **Just Hidden** did nothing at all server-side: the view was stored, the feeds were
+  never demoted, and your phone saw everything. This was the visible bug.
+- A feed added later to a hidden category could stay visible, because the "is a sweep needed?"
+  check compared two counts and the dead rows made the answer always "no".
+
+Rows for deleted feeds are now dropped as the pass walks past them, and the "is a sweep needed?"
+check counts feeds instead of comparing totals. Nothing else changed: the write is still `priority`,
+still per feed, still snapshot-and-restore, and no subscription is touched.
+
 **1.5.8** — the eye's third label reads **Just Hidden**.
 
 **1.5.5** — the button label names the state you are in.
