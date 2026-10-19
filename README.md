@@ -1,8 +1,8 @@
 # Hidden Categories
 
-Part of [dilroopg's FreshRSS extensions](https://github.com/dilroopg/freshrss-extensions) — see the hub for everything else.
+Part of [hardlysleeping's FreshRSS extensions](https://github.com/hardlysleeping/freshrss-extensions) — see the hub for everything else.
 
-> **Companion: [Favorite Categories](https://github.com/dilroopg/xExtension-FavoriteCategories)** does the opposite job. Its star (or pin) button narrows the sidebar and stream *down to* a few categories that you mark as favorites (`Mixed` → `Just Favorites` → `Hide Favorites`). Use it when you have too many categories and want to read only a handful of them, rather than putting some away.
+> **Companion: [Favorite Categories](https://github.com/hardlysleeping/xExtension-FavoriteCategories)** does the opposite job. Its star (or pin) button narrows the sidebar and stream *down to* a few categories that you mark as favorites (`Mixed` → `Just Favorites` → `Hide Favorites`). Use it when you have too many categories and want to read only a handful of them, rather than putting some away.
 >
 > The two extensions don't conflict, and neither one needs the other. Both hide rows when their filter is on, but they never target the same one: Favorite Categories skips any row that is already hidden, so a category that is both hidden and favorited stays hidden. When you install both, their buttons share one row above the sidebar and split the width evenly.
 >
@@ -28,12 +28,12 @@ Nothing is deleted, renamed or moved, and no subscription is ever touched.
 
 ```sh
 cd /path/to/FreshRSS/extensions
-git clone https://github.com/dilroopg/xExtension-HiddenCategories.git
+git clone https://github.com/hardlysleeping/xExtension-HiddenCategories.git
 ```
 
 **Option 2 — the release zip** (no git needed): download
 `xExtension-HiddenCategories.zip` from the
-[latest release](https://github.com/dilroopg/xExtension-HiddenCategories/releases/latest) and
+[latest release](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases/latest) and
 unpack it in `FreshRSS/extensions/`. Unpacking a newer zip over the top updates it and leaves
 your settings alone.
 
@@ -274,7 +274,7 @@ folder, the file stays behind; delete the file itself to forget everything.
 
 Version 1.5.5 renames the eye button's label so that it describes the view you are in. The full
 history is in [CHANGELOG.md](CHANGELOG.md), and every release is on the
-[releases page](https://github.com/dilroopg/xExtension-HiddenCategories/releases).
+[releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
 
 ## Troubleshooting
 

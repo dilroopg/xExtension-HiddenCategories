@@ -1,6 +1,6 @@
 # Changelog
 
-Newest first. These version numbers match the [releases page](https://github.com/dilroopg/xExtension-HiddenCategories/releases).
+Newest first. These version numbers match the [releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
 
 **1.5.8** — the eye's third label reads **Just Hidden**.
 
@@ -75,4 +75,4 @@ button beside the eye. Its children size themselves: one control takes the full 
 
 **1.3.5** — the `HIDDEN` tag gained a note on when it appears; the tag illustration was redrawn.
 
-Earlier versions are on the [releases page](https://github.com/dilroopg/xExtension-HiddenCategories/releases).
+Earlier versions are on the [releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
