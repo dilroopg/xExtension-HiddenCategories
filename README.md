@@ -108,7 +108,7 @@ views:
 | ![closed eye](docs/eye-hidden.svg) | ![peeking eye](docs/eye-revealed.svg) | ![open eye](docs/eye-only.svg) |
 |---|---|---|
 | **hidden** — what you hid is gone | **revealed** — everything, with the hidden ones marked | **only** — just the hidden ones |
-| next to it, the button reads **Hidden** | the button reads **Shown** | the button reads **Just hidden** |
+| next to it, the button reads **Hidden** | the button reads **Shown** | the button reads **Just Hidden** |
 
 Here is what each view does to each part of the page:
 
