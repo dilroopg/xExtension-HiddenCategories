@@ -227,6 +227,21 @@ no external service and no network calls.
 - **Hidden feeds keep downloading.** Hiding changes what is displayed, never what is fetched, so
   unread counts can climb for categories you can't see.
 
+## A note for later: per-category settings
+
+Everything Strict does is a **per-feed** write, because FreshRSS's Visibility setting is per feed:
+hiding one category means writing one row for every feed in it. That is where the seconds in the
+list above come from, and it is why the only-hidden view scales with your whole feed list.
+
+FreshRSS is heading toward **per-category settings**. When those exist, a category can be marked
+*Do not show* in a single write, and this extension should use that instead: hiding becomes a few
+writes rather than one per feed, and the peeking and only-hidden views stop scaling with the feed
+count.
+
+Nothing about the current behaviour changes until then. This section is a reminder for whoever
+works on the extension next — if you are reading it after FreshRSS has shipped per-category
+settings and the sweep here is still writing per feed, that is the first thing worth fixing.
+
 ## Getting everything back
 
 - **One category:** click `Show` in the settings list, use the button under Subscription
