@@ -88,11 +88,20 @@ here shows up everywhere, and the reverse is also true.
 None of this applies in **Light** mode. Nothing leaves the server, so only the web app filters and
 your other clients keep showing everything. That difference is the whole point of the two modes.
 
-The extension was tested on this behaviour with iOS **Lire** and **FeedFlow**. Both apps sync
-through FreshRSS's Google Reader API, and a hidden category simply doesn't come through until you
-unhide it here.
+This was tested on iOS with **FeedFlow** and **Lire**, both syncing through FreshRSS's Google
+Reader API, and the two behave differently.
 
-Two practical notes from that testing. First, the change reaches the app on a **full refresh**, so
+**FeedFlow follows it fully:** the hidden category and its feeds both go, and both come back when
+you unhide.
+
+**Lire (FreshRSS backend) keeps the category.** Its feeds stop coming through, so the category
+sits there empty rather than disappearing. What reaches the app is a feed list without those feeds
+— the server has no way to say "this category is hidden", only "this feed is not shown" — and an
+app that stores your category tree locally can hold an empty folder until it rebuilds that cache.
+A full refresh, clearing the app's cache, or re-adding the account forces that rebuild; nothing on
+the server side can make an app forget a folder.
+
+Two practical notes apply to either app. First, the change reaches the app on a **full refresh**, so
 force-quit the app and open it again rather than relying on a pull-to-refresh inside the app.
 Second, if the app's **cache is turned on, it may keep showing the old list anyway**. Turn the
 cache off, or clear it, to see the change.
@@ -291,11 +300,10 @@ FreshRSS. Strict hides *feeds*, one at a time — it is the only lever a server 
 hidden category therefore sends no feeds at all, and an app that stores your category tree locally
 can keep an empty folder until it rebuilds that tree.
 
-Tested on iOS readers, 2026-10, FreshRSS 1.30.1: **FeedFlow** follows Strict correctly — the
-category and its feeds both go and both come back. **Lire** keeps the category visible with no
-feeds inside. Re-adding the account (or clearing the app's data) forces a rebuild from the current
-feed list, which is the only thing that clears it from our side; there is no setting the extension
-can send to make an app forget a folder.
+**FeedFlow** follows Strict correctly — the category and its feeds both go and both come back.
+**Lire** keeps the category visible, with no feeds inside. A full refresh, clearing the app's cache,
+or re-adding the account forces it to rebuild from the current feed list; that is the only thing
+that clears it, because there is no setting the extension can send to make an app forget a folder.
 
 **A hidden category is empty when I click it.** This is expected in Strict: its feeds are set to
 *Do not show*, which empties the category page too. Unhide the category to read it, or use the

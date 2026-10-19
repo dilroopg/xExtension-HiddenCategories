@@ -2,6 +2,14 @@
 
 Newest first. These version numbers match the [releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
 
+**1.5.10** — README only: what each iOS app does with a hidden category.
+
+1.5.9's README said both tested apps drop a hidden category and show it again on unhide. Testing
+says otherwise, so the text now separates them: **FeedFlow** follows Strict fully, **Lire** keeps
+the category as an empty folder because it caches its own category tree. A full refresh, clearing
+the app's cache or re-adding the account is what clears it; there is nothing the server can send
+that makes an app forget a folder. No code changed in this release.
+
 **1.5.9** — a feed you deleted can no longer switch off Strict.
 
 The Strict pass walks a saved list of "what this feed's visibility was before I changed it". That
