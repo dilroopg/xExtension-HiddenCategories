@@ -103,25 +103,17 @@ category, the whole backlog comes back in every client, not just this browser.
 ## The green eye
 
 The eye **is** the button, and its icon shows which view you are in. Clicking it cycles through the
-three views. Each row below is one state of the button:
+three views:
 
-| button | label | view | what it does |
-|---|---|---|---|
-| ![closed eye](docs/eye-hidden.svg) | `Hidden` | **hidden** | your hidden categories are gone from the sidebar and stream |
-| ![peeking eye](docs/eye-revealed.svg) | `Shown` | **revealed** | everything is back; hidden rows are tagged `HIDDEN` |
-| ![open eye](docs/eye-only.svg) | `Just Hidden` | **only** | only your hidden categories show; everything else is filtered out |
+| button | label | view | sidebar | stream | feeds |
+|---|---|---|---|---|---|
+| ![closed eye](docs/eye-hidden.svg) | `Hidden` | **hidden** | hidden categories are gone | their articles are gone | the hiding is applied |
+| ![peeking eye](docs/eye-revealed.svg) | `Shown` | **revealed** | everything, with hidden rows tagged `HIDDEN` | hidden articles mixed in with the rest | the hiding is temporarily lifted |
+| ![open eye](docs/eye-only.svg) | `Just Hidden` | **only** | everything listed, non-hidden rows dimmed, hidden rows tagged `HIDDEN` | only the hidden categories' articles | the inverse is applied: hidden feeds are revealed and all others are set to *Do not show* |
 
 The button's label names the view you are **in**, not the one the next click moves to. So when the
 button reads `Shown`, you are looking at everything; when it reads `Just Hidden`, only the hidden
 categories are on screen.
-
-Here is what each view does to each part of the page:
-
-| view | sidebar | stream | feeds |
-|---|---|---|---|
-| **hidden** | hidden categories are gone | their articles are gone | the hiding is applied |
-| **revealed** | everything, with hidden rows tagged `HIDDEN` | hidden articles mixed in with the rest | the hiding is temporarily lifted |
-| **only** | everything listed, non-hidden rows dimmed, hidden rows tagged `HIDDEN` | only the hidden categories' articles | the inverse is applied: hidden feeds are revealed and all others are set to *Do not show* |
 
 **The "only" view removes the other categories; it doesn't just narrow the list.** Every article
 from a category you haven't hidden disappears from the stream. In the sidebar those rows are only
