@@ -265,7 +265,7 @@
 		// label and tooltip both name the state you are IN, not where the click goes
 		hidden: { text: 'Hidden', title: 'Hidden categories are hidden from the sidebar and stream' },
 		revealed: { text: 'Shown', title: 'Everything is showing again \u2014 hidden categories are marked' },
-		only: { text: 'Just hidden', title: 'Only hidden categories are showing' }
+		only: { text: 'Just Hidden', title: 'Only hidden categories are showing' }
 	};
 
 	function buildButton() {

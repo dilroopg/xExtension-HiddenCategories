@@ -2,12 +2,7 @@
 
 Newest first. These version numbers match the [releases page](https://github.com/dilroopg/xExtension-HiddenCategories/releases).
 
-**1.5.7** — the README says how another extension can hide categories through this one.
-
-The new `hideCategories()` method had no documentation, so a caller had no way to know it exists,
-what it returns, or that a missing or disabled extension means "nothing to do". The README now has a
-*Calling it from your own extension* section with the guard and a worked call. Nothing in the
-extension's own behaviour changed.
+**1.5.8** — the eye's third label reads **Just Hidden**.
 
 **1.5.5** — the button label names the state you are in.
 

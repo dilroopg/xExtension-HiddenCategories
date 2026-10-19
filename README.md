@@ -241,45 +241,6 @@ The extension keeps your settings, hidden set, mode and passcode when you disabl
 back when you re-enable it. Strict then re-applies the hiding automatically, so the extension never
 claims to hide things that are actually visible.
 
-## Calling it from your own extension
-
-There is a public method, so another extension can hide categories *through* this one instead of
-writing to the same tables behind its back. `hideCategories()` takes a map of category id to
-category name and a flag for which direction to go:
-
-```php
-$hc = Minz_ExtensionManager::findExtension('HiddenCategories');
-if ($hc !== null && method_exists($hc, 'hideCategories')) {
-	$result = $hc->hideCategories([12 => 'Example', 31 => 'Another example'], true);
-	// $result = ['ok' => true, 'changed' => 2, 'message' => 'hid 2 of 2 categories']
-}
-```
-
-The second argument is `true` to hide and `false` to show them again. `changed` counts the
-categories whose state actually moved, so a second run that hides the same set reports `0`, and
-`ok` is `false` if any category failed or the feeds could not be brought in line with the new set.
-
-**Check for the extension before you call it.** The method only exists while this extension is
-loaded, so `findExtension()` returning `null`, or the extension being installed but disabled, both
-mean *nothing to do*. Treat that as a normal outcome, not an error to report to the user: your
-extension is expected to work without this one.
-
-The write stays here on purpose. This extension owns the hidden set, so it does the insert, then
-runs its own feed pass, and `feed.priority` keeps a single writer. That means whatever the caller
-does respects your mode: in Light nothing is written to a feed, and in Strict the same sweep and
-snapshot logic runs that the Hide button uses, so the categories come back the same way.
-
-Names are stored, not just ids, so the settings page can show what was hidden even if the category
-is later renamed. Pass the name the category has now; a name you make up will be shown as the label
-in the settings list. Ids of zero or less are skipped.
-
-Nothing about the caller is stored anywhere in this extension. Once the categories are hidden they
-are simply hidden, so they stay hidden across a disable and re-enable, and a caller that runs again
-just re-syncs the same set.
-
-If you would rather keep your own list of categories separate from the user's hidden set, don't use
-this method. It hides for real, in the same place the user's own clicks do.
-
 ## What it writes
 
 **Light:** the extension writes nothing. Everything it stores lives in its own SQLite file,
