@@ -105,11 +105,11 @@ category, the whole backlog comes back in every client, not just this browser.
 The eye **is** the button, and its icon shows which view you are in. Clicking it cycles through the
 three views. Each row below is one state of the button:
 
-| button | view | label | what it does |
+| button | label | view | what it does |
 |---|---|---|---|
-| ![closed eye](docs/eye-hidden.svg) | **hidden** | `Hidden` | your hidden categories are gone from the sidebar and stream |
-| ![peeking eye](docs/eye-revealed.svg) | **revealed** | `Shown` | everything is back; hidden rows are tagged `HIDDEN` |
-| ![open eye](docs/eye-only.svg) | **only** | `Just Hidden` | only your hidden categories show; everything else is filtered out |
+| ![closed eye](docs/eye-hidden.svg) | `Hidden` | **hidden** | your hidden categories are gone from the sidebar and stream |
+| ![peeking eye](docs/eye-revealed.svg) | `Shown` | **revealed** | everything is back; hidden rows are tagged `HIDDEN` |
+| ![open eye](docs/eye-only.svg) | `Just Hidden` | **only** | only your hidden categories show; everything else is filtered out |
 
 The button's label names the view you are **in**, not the one the next click moves to. So when the
 button reads `Shown`, you are looking at everything; when it reads `Just Hidden`, only the hidden
