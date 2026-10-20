@@ -14,7 +14,7 @@ no sidebar entry and no articles in your main stream. You can bring them back in
 This extension is aimed at people reading in public places: someone at the next desk, a person
 walking past, or a friend picking up your phone. The category stays in your FreshRSS and keeps
 updating; it just isn't visible. In Strict mode, it also disappears from your phone and from every
-synced reader app.
+synced reader app — including **NewsFlash**, where hidden categories simply don't appear.
 
 FreshRSS has no "hide a category" switch. The usual workarounds are to unsubscribe (and lose the
 feeds) or to collapse the folder (which still floods the main stream). This extension adds the
@@ -60,6 +60,7 @@ too?**
 |---|---|---|
 | main stream in your browser | filtered | filtered |
 | phone, reader app, API | still show everything | **hidden** |
+| **NewsFlash** | still shows everything | **hidden categories don't appear** |
 | the category's own page | still shows its feeds | **empty until you unhide it** |
 | what it writes | nothing at all | FreshRSS's per-feed Visibility; the old value is saved and restored later |
 | speed when hiding | instant | a burst of work at the click (see [costs](#what-it-costs)) |
@@ -74,8 +75,8 @@ That makes it one state shared by all of FreshRSS rather than one state per app.
 here shows up everywhere, and the reverse is also true.
 
 - **Hide a category here** and it is gone from the sidebar and stream in the web app, and from
-  whatever your phone, tablet or reader app syncs. You don't need to install anything on the other
-  side.
+  whatever your phone, tablet or reader app syncs — **NewsFlash** included. You don't need to
+  install anything on the other side.
 - **Unhide it here** and it comes back on the next sync, in every client.
 - **Change a feed's Visibility** in FreshRSS's own *Subscription management* (to *Reading list*,
   *Important* or *Do not show*) and this extension sees the change too, because it reads that same
