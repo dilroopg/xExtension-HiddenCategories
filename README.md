@@ -358,3 +358,7 @@ GPL-3.0 — see [LICENSE](LICENSE).
 
 FreshRSS itself is AGPL-3.0. This is an independent work that talks to FreshRSS through its public
 extension API; check the AGPL's terms if you plan to redistribute a combined bundle.
+
+## Support
+
+[![Donate with PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=RNT5W4XNC64EY)
