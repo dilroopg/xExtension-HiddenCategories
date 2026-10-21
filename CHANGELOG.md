@@ -2,6 +2,21 @@
 
 Newest first. These version numbers match the [releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
 
+**1.5.12** — the lock no longer eats the favorites button.
+
+Both this extension and **Favorite Categories** put a control in the same row above the sidebar
+tree, and the row is deliberately shared: whichever extension arrives first creates it, everyone
+else appends. This extension was clearing that whole row on every render and rebuilding it with
+only its own control, which deleted the favorites star. Because the star is drawn once and then
+skips itself on later renders, it never came back — the button was gone for the life of the page.
+
+This extension now writes into a slot of its own inside the row and never touches its siblings'
+controls. The row already sizes every direct child equally, so the two controls split the width
+evenly, and either still fills the row when the other is absent.
+
+Nothing else changed: same buttons, same states, same passcode form. No server-side code was
+touched.
+
 **1.5.11** — the unlock button is a key.
 
 The lock row's submit button said **Unlock**. It is now a key glyph, which fits the narrow sidebar

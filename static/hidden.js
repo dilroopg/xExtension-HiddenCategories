@@ -310,15 +310,32 @@
 		}
 		bar.style.display = '';
 
+		// THE SHARED ROW BELONGS TO NOBODY. Other extensions (FavoriteCategories)
+		// append their own control into this same .rs-bar-row and keep it alive
+		// with an idempotence guard — they draw once and never re-render. So this
+		// extension must never clear the row: doing that deletes their button,
+		// and their guard means they never put it back.
+		//
+		// Instead we own a slot of our own inside the row and write only into
+		// that. The row sizes its children generically (flex: 1 1 0), so two
+		// present controls split the width equally without either extension
+		// knowing the other exists.
+		var slot = btnWrap.querySelector(':scope > .hc-slot');
+		if (!slot) {
+			slot = document.createElement('div');
+			slot.className = 'hc-slot';
+			btnWrap.appendChild(slot);
+		}
+		var own = function (node) { slot.innerHTML = ''; slot.appendChild(node); };
+
 		// The eye button is created INSIDE the unlocked branch below, because the
-		// locked branch replaces the whole row with a form. Looking it up here
-		// (as this code used to) returned null whenever the previous render had
-		// been the locked one, and the function bailed out before drawing the
+		// locked branch replaces this slot's contents with a form. Looking it up
+		// here (as this code used to) returned null whenever the previous render
+		// had been the locked one, and the function bailed out before drawing the
 		// unlock form — the lock rendered as an empty row on every reload.
 
-		// ---- locked: the eye is replaced in place by the unlock form --------
+		// ---- locked: the slot's contents are replaced by the unlock form -----
 		if (locked) {
-			btnWrap.innerHTML = '';
 			var form = document.createElement('form');
 			form.className = 'hc-unlock';
 			form.method = 'post';
@@ -334,14 +351,13 @@
 				var f = form.querySelector('.hc-code');
 				if (!f || f.value === '') { ev.preventDefault(); return; }
 			});
-			btnWrap.appendChild(form);
+			own(form);
 			var fld = form.querySelector('.hc-code');
 			if (fld) { try { fld.focus(); } catch (e) {} }
 			return;
 		}
 
 		// ---- unlocked: eye + lock button -----------------------------------
-		btnWrap.innerHTML = '';
 		var b = document.createElement('button');
 		b.type = 'button';
 		b.id = 'hc-view-btn';
@@ -363,7 +379,7 @@
 					ev.preventDefault();
 					post({ act: 'lock' });
 				});
-				btnWrap.appendChild(lk0);
+				own(lk0);
 			}
 			return;
 		}
@@ -381,7 +397,12 @@
 		b.title = l.title;
 		b.setAttribute('data-hc-state', view);
 		b.setAttribute('aria-label', l.text + ' \u2014 ' + l.title);
-		btnWrap.appendChild(b);
+		// The eye and the lock are one visual unit, so they go into the slot
+		// together: build the pair into a fragment, then swap the slot's
+		// contents once. Writing the slot twice would blank the eye as the
+		// lock is appended.
+		slot.innerHTML = '';
+		slot.appendChild(b);
 
 		// only offer the lock when a passcode exists, so the button can never
 		// lead to a dead end
@@ -396,7 +417,7 @@
 				ev.preventDefault();
 				post({ act: 'lock' });
 			});
-			btnWrap.appendChild(lk);
+			slot.appendChild(lk);
 		}
 	}
 

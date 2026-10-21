@@ -284,10 +284,35 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	flex: 1 1 0;
 	min-width: 0;
 }
-/* controls that must not grow (the lock icon button) keep their own size */
+/* controls that must not grow (the lock icon button) keep their own size.
+ * These now sit inside .hc-slot rather than directly in the row, so both
+ * selectors are kept: the direct-child form for older layouts, the slot
+ * form for the current one. */
 .rs-bar-row > .hc-lock-btn,
-.rs-bar-row > .hc-lock-btn-wide {
+.rs-bar-row > .hc-lock-btn-wide,
+.hc-slot > .hc-lock-btn,
+.hc-slot > .hc-lock-btn-wide {
 	flex: 0 0 auto;
+}
+/* This extension's own column inside the shared row. The row gives every
+ * direct child an equal share (.rs-bar-row > *), so this takes half the
+ * width when a sibling extension is present and all of it when this one is
+ * alone. Inside, the eye grows and the lock keeps its natural size. */
+.hc-slot {
+	display: flex;
+	align-items: stretch;
+	gap: 0.5em;
+	min-width: 0;
+}
+/* The locked state is a form, not a button: let it fill the column. */
+.hc-slot > .hc-unlock {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+.hc-slot > .hc-view-btn,
+.hc-slot > .hc-lock-btn-wide {
+	flex: 1 1 auto;
+	min-width: 0;
 }
 .hc-lock-btn {
 	flex: 0 0 auto;
