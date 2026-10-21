@@ -869,6 +869,24 @@ class HiddenCategoriesExtension extends Minz_Extension
 				}
 				return;
 
+			case 'unlock-here':
+				// The settings page is the documented way back in when the
+				// passcode is forgotten: this page already sits behind the
+				// FreshRSS login, so posting the passcode back into the HTML
+				// to prove you know it proves nothing — and it left the code
+				// readable in the page source and in any screenshot.
+				// This action therefore unlocks on the strength of the session
+				// alone. It is only reachable from handleConfigurePost(), so
+				// an unauthenticated request never reaches it.
+				if (!$this->store()->isLocked()) {
+					Minz_Request::good('Already unlocked.', $this->selfUrl());
+					return;
+				}
+				$this->store()->setMeta('locked', '0');
+				Minz_Session::_param('hc_unlocked_at', date('c'));
+				Minz_Request::good('Unlocked for this session.', $this->selfUrl());
+				return;
+
 			case 'passcode':
 				// Always allowed, locked or not: the settings page is the escape
 				// hatch and must never need the code you may have forgotten.

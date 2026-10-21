@@ -275,6 +275,13 @@ final class HiddenCategoriesStore
 			$this->setMeta('locked', '0');
 			return ['ok' => true, 'message' => 'Passcode cleared — the lock is now disabled.'];
 		}
+		// Digits only, at most 6. Enforced here and not only in the form:
+		// maxlength and pattern are client-side hints that a hand-made POST
+		// ignores entirely, and the passcode is compared as an exact string,
+		// so anything longer or non-numeric could never be typed back in.
+		if (!preg_match('/^[0-9]{1,6}$/', $code)) {
+			return ['ok' => false, 'message' => 'Passcode must be 1 to 6 digits, numbers only.'];
+		}
 		if (!$this->setMeta('passcode', $code)) {
 			return ['ok' => false, 'message' => 'Could not save the passcode.'];
 		}

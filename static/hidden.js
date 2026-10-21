@@ -333,6 +333,30 @@
 		removeOwn('hc-view-btn');
 		removeOwn('hc-lock-btn');
 
+		// ---- placement: this extension's control sits FIRST in the row ------
+		// Appending would make our position depend on which extension's script
+		// happened to run last, so the eye landed to the right of the favorites
+		// star whenever FavoriteCategories drew after us — and the locked
+		// unlock form did the same, for the same reason. There is no ordering
+		// logic in either extension; it is pure execution order.
+		//
+		// Insert before the first sibling we do not own instead. That fixes our
+		// side to the left of any other extension's control without naming it,
+		// in both the locked and unlocked states, and leaves siblings' order
+		// among themselves exactly as it was.
+		var isOurs = function (el) {
+			return el.id === 'hc-view-btn' || el.id === 'hc-lock-btn'
+				|| el.id === 'hc-unlock-form';
+		};
+		var placeOwn = function (node) {
+			var ref = null;
+			for (var k = 0; k < btnWrap.children.length; k++) {
+				var kid = btnWrap.children[k];
+				if (!isOurs(kid)) { ref = kid; break; }
+			}
+			btnWrap.insertBefore(node, ref);
+		};
+
 		// The eye button is created INSIDE the unlocked branch below, because the
 		// locked branch replaces this row's contents with a form. Looking it up
 		// here (as this code used to) returned null whenever the previous render
@@ -346,21 +370,46 @@
 			form.id = 'hc-unlock-form';
 			form.method = 'post';
 			form.action = HC.api || '';
+			// A fresh seed for the passcode field on every render. Locking
+			// reloads the page, so every time you lock this box is a NEW input
+			// as far as the browser is concerned: the id and the autocomplete
+			// token both change, and a browser or password manager that keys
+			// autofill off either one finds no match and leaves it empty.
+			// Without this the field could come back pre-filled from a save
+			// prompt, and one click of the key would unlock it — the lock
+			// would be decorative.
+			// The server reads it by name, so the name stays 'code'.
+			var seed = 'hc-code-' + Date.now().toString(36)
+				+ '-' + Math.random().toString(36).slice(2, 8);
 			form.innerHTML = '<span class="hc-ico hc-lock-ico">' + LOCK_ICON + '</span>'
 				+ '<input type="hidden" name="_csrf" value="' + csrfToken() + '" />'
 				+ '<input type="hidden" name="act" value="unlock" />'
 				+ '<input type="hidden" name="back" value="' + backUrl() + '" />'
-				+ '<input type="password" name="code" class="hc-code" autocomplete="off"'
-				+ ' placeholder="passcode" aria-label="Passcode" />'
+				+ '<input type="password" name="code" class="hc-code"'
+				+ ' id="' + seed + '" autocomplete="new-password" spellcheck="false"'
+				+ ' inputmode="numeric" pattern="[0-9]*" maxlength="6"'
+				+ ' data-lpignore="true" data-1p-ignore data-form-type="other"'
+				+ ' placeholder="pin" aria-label="Pin, up to 6 digits" />'
 				+ '<button type="submit" class="hc-unlock-btn" aria-label="Unlock" title="Unlock">' + KEY_ICON + '</button>';
 			form.addEventListener('submit', function (ev) {
 				var f = form.querySelector('.hc-code');
 				if (!f || f.value === '') { ev.preventDefault(); return; }
 			});
 			// a direct child of the row, so the row sizes it like any sibling button
-			btnWrap.appendChild(form);
+			placeOwn(form);
 			var fld = form.querySelector('.hc-code');
-			if (fld) { try { fld.focus(); } catch (e) {} }
+			if (fld) {
+				// a browser that fills anyway is overruled: clear it after any
+				// autofill has had its go, so what you see is what you must type
+				fld.value = '';
+				// digits only, six at most — maxlength/pattern are hints a paste
+				// or a password manager can bypass, so strip here as well
+				fld.addEventListener('input', function () {
+					var clean = fld.value.replace(/[^0-9]/g, '').slice(0, 6);
+					if (clean !== fld.value) { fld.value = clean; }
+				});
+				try { fld.focus(); } catch (e) {}
+			}
 			return;
 		}
 
@@ -387,7 +436,7 @@
 					ev.preventDefault();
 					post({ act: 'lock' });
 				});
-				btnWrap.appendChild(lk0);
+				placeOwn(lk0);
 			}
 			return;
 		}
@@ -406,9 +455,10 @@
 		b.setAttribute('data-hc-state', view);
 		b.setAttribute('aria-label', l.text + ' \u2014 ' + l.title);
 		// The eye and the lock are separate direct children of the row, so the
-		// row gives each its own share. The eye is created above and appended
-		// here; the lock is appended after it when a passcode exists.
-		btnWrap.appendChild(b);
+		// row gives each its own share. placeOwn (not appendChild) keeps the
+		// pair on the left of any sibling control regardless of which
+		// extension's script ran first.
+		placeOwn(b);
 
 		// only offer the lock when a passcode exists, so the button can never
 		// lead to a dead end
@@ -424,7 +474,7 @@
 				ev.preventDefault();
 				post({ act: 'lock' });
 			});
-			btnWrap.appendChild(lk);
+			placeOwn(lk);
 		}
 	}
 

@@ -2,6 +2,61 @@
 
 Newest first. These version numbers match the [releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
 
+**1.5.15** — the passcode is digits only, labels stop fracturing mid-word, and the passcode field is
+sized for a passcode.
+
+*Passcode is 1–6 digits, numbers only.* The field takes digits and refuses more than six. Enforced in
+`setPasscode()` on the server as well as in the form: `maxlength` and `pattern` are browser hints
+that a hand-made POST ignores, and the code is compared as an exact string, so a longer or
+non-numeric value could never be typed back in to unlock. Both fields strip anything that is not a
+digit as you type. An empty field still clears the passcode and disables the lock. The wording on the
+settings page is now **pin**, matching the sidebar.
+
+*Labels no longer break mid-word.* With three controls sharing the row, "Hidden" was fracturing into
+"Hidde" / "n" — `word-break: break-word` splits a word wherever it runs out of room. Labels are now
+one line, elided with an ellipsis if they truly cannot fit, which reads as "too narrow" rather than
+as broken text.
+
+*Widths.* The lock is icon-only and takes its natural width (~23px) while the eye and the pin share
+the rest (~113px each). Three labelled buttons cannot fit one 265px row — an equal third is about
+85px, not enough for a glyph plus a word — so the key handing its column back is what lets the two
+labelled buttons show their words whole.
+
+*The passcode field is sized for a passcode.* It was `min-width: 12em`, wide enough for a sentence,
+for a field that holds six digits. It is now seven characters wide and does not grow.
+
+*The locked row no longer starves its neighbour.* An earlier attempt at this made the unlock form
+size to its content, which let it claim the row and squash the favourites button to nothing. The
+form takes one equal share, as it did in 1.5.14.
+
+*(Passcode length: the stored value is an existing 4-digit code, still valid under the 1–6 rule.)*
+
+**1.5.14** — equal-width controls, a passcode that cannot be pre-filled, and the settings page stops
+printing the passcode.
+
+*Row widths.* 1.5.13 left the lock at its natural width while the pin and the eye each took an
+equal share, so with three controls on screen the lock came out narrower than the other two. All
+three are now equal `flex: 1 1 0` columns and the lock centres its key glyph.
+
+*Row order.* This extension's controls are inserted before the first control it does not own, rather
+than appended. Appending made the position depend on which extension's script happened to run last,
+so the eye could land to the right of the favorites star. That applies in every state now: eye, wide
+lock, narrow lock and the locked unlock form.
+
+*The passcode is never pre-filled.* The unlock field in the sidebar is rebuilt with a fresh id on
+every render and `autocomplete="new-password"`, and its value is cleared after build, so a browser
+or password manager that saved the passcode cannot put it back for you. Locking reloads the page, so
+every lock gets a brand new field. A lock whose code is already typed in is not a lock.
+
+*The settings page no longer contains the passcode.* The "Unlock now" button used to carry the
+passcode in a hidden field, which put the code in the page source and in any screenshot of the
+settings page, and contradicted the note beside it. It now posts a separate `unlock-here` action and
+unlocks on the strength of the logged-in session — the settings page is already behind the FreshRSS
+login, so this is the same escape hatch without the secret in the HTML. The visible passcode field
+is also no longer rendered with a saved value in it.
+
+No change to what Strict writes to feeds, and no change to Favorite Categories.
+
 **1.5.13** — a genuinely even split with the favorites button.
 
 1.5.12 stopped this extension deleting the favorites star, but the widths were still uneven: with
@@ -13,9 +68,9 @@ again between the eye and the lock — so the eye got less than the star, which 
 with a whole share to itself.
 
 The wrapper is gone. The eye and the lock are now direct children of the row like any other
-button, so all three take the same share. Measured at 240px, 280px and 360px row widths, the star
-and the eye come out pixel-identical every time; the icon-only lock keeps its natural width instead
-of claiming a column.
+button, so all three take the same share. At the widths this was checked at, the star and the eye
+come out pixel-identical; the icon-only lock kept its natural width rather than claiming a column
+(**reversed in 1.5.14**, where the lock takes an equal column too).
 
 Nothing else changed. No server-side code was touched.
 

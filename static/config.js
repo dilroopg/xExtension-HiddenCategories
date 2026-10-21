@@ -126,7 +126,22 @@
 		render();
 	}
 
+	// The passcode is digits only, 1-6. maxlength and pattern are HTML hints
+	// that a paste or a password manager walks straight past, so strip on
+	// input as well. Server-side validation in setPasscode() is the real
+	// gate; this is only so you never see a character that will be refused.
+	function bindPasscode() {
+		var f = document.getElementById('hc-passcode');
+		if (!f || f.getAttribute('data-hc-digits') === '1') { return; }
+		f.setAttribute('data-hc-digits', '1');
+		f.addEventListener('input', function () {
+			var clean = f.value.replace(/[^0-9]/g, '').slice(0, 6);
+			if (clean !== f.value) { f.value = clean; }
+		});
+	}
+
 	ready(bind);
+	ready(bindPasscode);
 	// The configure view can be injected after DOMContentLoaded; poll briefly.
 	var tries = 0;
 	var timer = window.setInterval(function () {

@@ -154,13 +154,15 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 }
 .hc-view-btn .hc-txt {
 	overflow: hidden;
-	white-space: normal;
+	/* one line, elided if it cannot fit. word-break: break-word fractured
+	 * labels mid-word ("Hidde" / "n") once three controls shared the row;
+	 * an ellipsis reads as "too narrow" instead of as broken text. */
+	white-space: nowrap;
+	text-overflow: ellipsis;
 	line-height: 1.15;
 	text-align: left;
-	/* a narrow shared row must not cut the text off: wrap at the marked break
-	 * ("Only" / "hidden") and let long words break rather than clip */
-	overflow-wrap: anywhere;
-	word-break: break-word;
+	overflow-wrap: normal;
+	word-break: normal;
 }
 .hc-view-btn .hc-w {
 	display: inline;
@@ -287,14 +289,22 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 /* This extension's controls are DIRECT children of the shared row, so the
  * row's own rule (.rs-bar-row > *, flex 1 1 0) sizes them. Two controls of
  * ours plus a sibling's make three equal columns; ours alone fill the row.
- * The old .hc-slot wrapper is gone: a wrapper would have claimed one share
- * and split it again, leaving our eye narrower than a sibling's button. */
+ * Our controls must not be wrapped in a container: a wrapper would claim one
+ * share and split it again, leaving our eye narrower than a sibling's button.
+ *
+ * CASCADE NOTE: the lock rules below (.rs-bar-row > .hc-lock-btn and the
+ * .hc-lock-btn base rule at the end of this block) are specificity 0-2-0 vs
+ * 0-1-0, so this file's order matters. Keep this rule above the base
+ * .hc-lock-btn rule or the lock silently goes back to its natural width. */
 .rs-bar-row > .hc-view-btn {
 	flex: 1 1 0;
 	min-width: 0;
 }
-/* The narrow lock is icon-only, so it keeps its natural size instead of
- * claiming a full column. */
+/* The lock is icon-only, so it keeps its natural width. Three labelled
+ * buttons cannot fit one 265px row: at an equal third each gets ~85px, which
+ * is not enough for a glyph plus a word, so labels elided. Giving the key its
+ * own narrow column hands ~25px back to the two labelled buttons, which is
+ * what lets "Hidden" and "Mixed" fit whole. */
 .rs-bar-row > .hc-lock-btn {
 	flex: 0 0 auto;
 }
@@ -304,7 +314,10 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	flex: 1 1 0;
 	min-width: 0;
 }
-/* the unlock form takes a column, same as a sibling's button */
+/* the unlock form takes one equal share of the row, exactly like a sibling
+ * extension's button, so the star beside it keeps its own share and is never
+ * squashed. Setting this to size-to-content instead let the form claim the
+ * row and starve the neighbour. */
 .rs-bar-row > .hc-unlock {
 	flex: 1 1 0;
 	min-width: 0;
@@ -390,7 +403,15 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 	border: 1px solid rgba(128, 128, 128, 0.5);
 	background: rgba(0, 0, 0, 0.12);
 	color: inherit;
-	min-width: 12em;
+	/* the passcode is at most six digits, so the field is sized for six
+	 * digits: wide enough to see them, narrow enough not to advertise that it
+	 * would take a sentence. It does not grow with the form. */
+	width: 7ch;
+	min-width: 7ch;
+	max-width: 7ch;
+	flex: 0 0 auto;
+	text-align: center;
+	letter-spacing: 0.15em;
 }
 .hc-lock-row {
 	display: flex;

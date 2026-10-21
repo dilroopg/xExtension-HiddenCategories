@@ -4,7 +4,7 @@ Part of [hardlysleeping's FreshRSS extensions](https://github.com/hardlysleeping
 
 > **Companion: [Favorite Categories](https://github.com/hardlysleeping/xExtension-FavoriteCategories)** does the opposite job. Its star (or pin) button narrows the sidebar and stream *down to* a few categories that you mark as favorites (`Mixed` → `Just Favorites` → `Hide Favorites`). Use it when you have too many categories and want to read only a handful of them, rather than putting some away.
 >
-> The two extensions don't conflict, and neither one needs the other. Both hide rows when their filter is on, but they never target the same one: Favorite Categories skips any row that is already hidden, so a category that is both hidden and favorited stays hidden. When you install both, their buttons share one row above the sidebar and split the width evenly.
+> The two extensions don't conflict, and neither one needs the other. Both hide rows when their filter is on, but they never target the same one: Favorite Categories skips any row that is already hidden, so a category that is both hidden and favorited stays hidden. When you install both, their buttons share one row above the sidebar: the two labelled buttons — this extension's eye and the favorites button — split the available width evenly, and the icon-only lock keeps its own narrow width beside them.
 >
 > Both extensions have Light and Strict modes. In Strict, neither one writes to a feed that the other one owns: Favorite Categories never touches a feed inside a hidden category. That way the two can't fight over the same row.
 
@@ -185,7 +185,7 @@ cache — see the troubleshooting note below.
   lists every feed and category, and it's unaffected. So is the category's own page once unhidden.
 - **Protect you in Light mode on other devices.** Light filters this browser only; a phone or
   another browser still shows everything.
-- **Provide real password security.** The optional passcode below is a speed bump, not a lock.
+- **Provide real password security.** The optional pin below is a speed bump, not a lock.
 
 If you need the content itself kept from someone with server access, this isn't the tool for it —
 that needs encryption at rest, which no FreshRSS extension provides.
@@ -193,11 +193,11 @@ that needs encryption at rest, which no FreshRSS extension provides.
 </details>
 
 <details>
-<summary>Optional passcode lock</summary>
+<summary>Optional pin lock</summary>
 
 For one situation: you've hidden something, someone walks up to your unlocked computer, and you
-don't want them clicking the eye. Set a passcode in the settings and a red lock button appears
-beside the eye:
+don't want them clicking the eye. Set a pin in the settings — **1 to 6 digits** — and a red lock
+button appears beside the eye:
 
 ![red lock button](docs/lock-button.svg)
 
@@ -316,8 +316,8 @@ been run as root from a command line, which leaves root-owned files behind. Fix 
 `chown -R www-data:www-data data/users/<your user>/extensions`, using your own web-server user.
 
 **The eye button isn't there.** It appears once something is hidden, or once you have set a
-passcode so that you can lock the controls before hiding anything. While the controls are locked,
-the passcode field replaces the button.
+pin so that you can lock the controls before hiding anything. While the controls are locked,
+the pin field replaces the button.
 
 **It won't load at all.** You are on a FreshRSS version below 1.28.0, which doesn't have a feature
 this extension needs.

@@ -312,17 +312,19 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 		<form method="post" action="<?= $url ?>" class="hc-lock-form">
 			<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
 			<input type="hidden" name="act" value="passcode" />
-			<label for="hc-passcode">Passcode</label>
+			<label for="hc-passcode">Pin</label>
 			<input type="text" id="hc-passcode" name="passcode" class="hc-passcode"
-				value="<?= htmlspecialchars($passcode, ENT_QUOTES) ?>"
-				placeholder="leave empty to disable the lock" autocomplete="off" />
-			<button class="btn" type="submit">Save passcode</button>
-			<span class="hc-hint">Shown as plain text on purpose — you can always read or
-				change it here, even while locked.</span>
+				inputmode="numeric" pattern="[0-9]*" maxlength="6"
+				placeholder="<?= $passcode === '' ? 'up to 6 digits' : 'set — type a new one' ?>"
+				autocomplete="off" spellcheck="false" />
+			<button class="btn" type="submit">Save pin</button>
+			<span class="hc-hint">Never shown back to you: the saved pin is not
+				re-displayed here, so a shoulder or a screenshot cannot read it. 1 to 6
+				digits. Save an empty field to disable the lock.</span>
 		</form>
 
 		<div class="hc-lock-row">
-			<span>Status: <strong><?= $locked ? 'locked' : ($passcode !== '' ? 'unlocked' : 'no passcode set') ?></strong></span>
+			<span>Status: <strong><?= $locked ? 'locked' : ($passcode !== '' ? 'unlocked' : 'no pin set') ?></strong></span>
 			<form method="post" action="<?= $url ?>">
 				<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
 				<input type="hidden" name="act" value="lock" />
@@ -330,8 +332,7 @@ $row = static function (array $c, bool $isHidden) use ($url, $csrf): void {
 			</form>
 			<form method="post" action="<?= $url ?>">
 				<input type="hidden" name="_csrf" value="<?= $csrf ?>" />
-				<input type="hidden" name="act" value="unlock" />
-				<input type="hidden" name="code" value="<?= htmlspecialchars($passcode, ENT_QUOTES) ?>" />
+				<input type="hidden" name="act" value="unlock-here" />
 				<button class="btn" type="submit" <?= $locked ? '' : 'disabled="disabled"' ?>>Unlock now</button>
 			</form>
 			<span class="hc-hint">Unlock from here never asks for the code — this page is the
