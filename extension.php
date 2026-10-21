@@ -446,12 +446,23 @@ class HiddenCategoriesExtension extends Minz_Extension
 		$store = $this->store();
 		$strict = $store->mode() === 'strict';
 		$hiddenIds = $store->hiddenIds();
+		// A view that needs the hidden feeds VISIBLE cannot be enforced from
+		// here. Peeking and "only hidden" both lift enforcement so the articles
+		// render at all; at -10 the server sends none, so enforcing while either
+		// is on leaves the categories in the sidebar with nothing inside them.
+		// That is reachable from this extension's own settings list (hide a
+		// category while the eye is on "only hidden") — measured: every hidden
+		// feed pushed to -10 and the view went empty.
+		// A sweep taken from any other path therefore converges to the state the
+		// current view needs instead of fighting it.
+		$view = $store->getMeta('view', 'hidden');
+		$viewNeedsVisible = $strict && in_array($view, ['only', 'revealed'], true);
 		if ($apply) {
 			$store->setMeta('peek_parked', '0');   // a sweep ends any peek
 			// a sweep is authoritative: any feed still demoted for the "only
 			// hidden" view is put back first, so a mode switch or a disable can
 			// never leave the inverse state behind
-			if ($store->inverseSnapshotCount() > 0 && in_array($store->getMeta('view', 'hidden'), ['hidden', 'revealed'], true)) {
+			if ($store->inverseSnapshotCount() > 0 && in_array($view, ['hidden', 'revealed'], true)) {
 				$this->exitOnlyView();
 			}
 		}
@@ -504,7 +515,9 @@ class HiddenCategoriesExtension extends Minz_Extension
 		}
 
 		// ---- 2. enforce every feed in a hidden category --------------------
-		if ($strict) {
+		// Skipped entirely when the current view needs those feeds visible; the
+		// view's own pass at the end of this method puts them in the right state.
+		if ($strict && !$viewNeedsVisible) {
 			foreach ($hiddenIds as $catId) {
 				foreach ($categoryOf as $feedId => $cid) {
 					if ($cid !== $catId) {
@@ -537,6 +550,19 @@ class HiddenCategoriesExtension extends Minz_Extension
 					$store->confirmApplied($feedId);
 					$enforced++;
 				}
+			}
+		}
+
+		if ($apply && $viewNeedsVisible) {
+			// Converge to what this view needs instead of enforcing the hidden
+			// set: 'only hidden' lifts the hidden feeds and demotes everything
+			// else, peeking lifts the hidden feeds and leaves the rest alone.
+			$viewSweep = $view === 'only' ? $this->enterOnlyView() : $this->suspendEnforcement();
+			$enforced += (int)($viewSweep['enforced'] ?? 0);
+			$restored += (int)($viewSweep['restored'] ?? 0);
+			$skipped += (int)($viewSweep['skipped'] ?? 0);
+			if (empty($viewSweep['ok'])) {
+				$failed += max(1, (int)($viewSweep['failed'] ?? 0));
 			}
 		}
 

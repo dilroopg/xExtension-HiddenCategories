@@ -2,6 +2,21 @@
 
 Newest first. These version numbers match the [releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
 
+**1.5.18** — a sweep can no longer blank the peeking and only-hidden views.
+
+The peeking and only-hidden views lift the hiding on purpose: at *Do not show* the server sends no
+articles, so the view would otherwise render empty. Any action that converged the feeds back to your
+hidden set could still re-apply the hiding while one of those views was open, and the result was a
+sidebar with the categories in it and nothing inside them. The reachable case was hiding a category
+from the settings list while the eye was on only-hidden, which no longer has to be avoided.
+
+`sweepFeeds()` now takes the current view into account. While the eye is on `revealed` or `only` it
+converges to that view's own state — revealing the hidden feeds, and for `only` demoting everything
+else — instead of enforcing the hidden set. Hiding, unhiding, changing mode and disabling all run
+through that one sweep, so every one of them leaves the view you are looking at intact.
+
+No migration, and nothing changes on upgrade.
+
 **1.5.17** — the pin lock is armed by default on a fresh install.
 
 A new install now comes up **locked with the pin `0000`**, so the controls are protected from the

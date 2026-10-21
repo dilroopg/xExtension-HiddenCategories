@@ -146,6 +146,11 @@ Leaving the view, whether by the eye, a mode change, unhiding or disabling the e
 of them back. Those feeds are tracked separately from your hidden set, so a view never contaminates
 what you actually hid. Expect a sweep on entry and on exit, sized to your non-hidden feed count.
 
+While either of these views is open, the hiding stays lifted — that is what lets the view show
+anything at all. Any *other* action that touches your hidden set in that state (hiding another
+category from the settings list, changing mode, unhiding) converges to the view you are looking at
+rather than re-applying the hiding, so the categories in the view never end up sitting there empty.
+
 The row at the bottom of the sidebar labels itself in one of three display states. You pick the
 state under **Sidebar** in the settings:
 
