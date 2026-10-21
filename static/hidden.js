@@ -260,6 +260,14 @@
 		+ '<rect x="4.5" y="10.5" width="15" height="10" rx="2"/>'
 		+ '<path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>';
 
+	// Key glyph for the unlock submit button. Same inline-SVG convention as
+	// LOCK_ICON, so the button reads as a key regardless of emoji support.
+	var KEY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"'
+		+ ' stroke-linecap="round" stroke-linejoin="round"'
+		+ ' aria-hidden="true" focusable="false" width="1em" height="1em"'
+		+ ' style="vertical-align:-0.125em"><circle cx="7.5" cy="15.5" r="4.5"/>'
+		+ '<path d="M10.7 12.3 20 3m-3.5 0H20v3.5"/></svg>';
+
 	var LABELS = {
 		// label names what the NEXT click does; the icon shows the CURRENT state
 		// label and tooltip both name the state you are IN, not where the click goes
@@ -321,7 +329,7 @@
 				+ '<input type="hidden" name="back" value="' + backUrl() + '" />'
 				+ '<input type="password" name="code" class="hc-code" autocomplete="off"'
 				+ ' placeholder="passcode" aria-label="Passcode" />'
-				+ '<button type="submit" class="hc-unlock-btn">Unlock</button>';
+				+ '<button type="submit" class="hc-unlock-btn" aria-label="Unlock" title="Unlock">' + KEY_ICON + '</button>';
 			form.addEventListener('submit', function (ev) {
 				var f = form.querySelector('.hc-code');
 				if (!f || f.value === '') { ev.preventDefault(); return; }

@@ -2,6 +2,19 @@
 
 Newest first. These version numbers match the [releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
 
+**1.5.11** — the unlock button is a key.
+
+The lock row's submit button said **Unlock**. It is now a key glyph, which fits the narrow sidebar
+better and reads the same in every language. The word is not lost: the button keeps
+`aria-label="Unlock"` and `title="Unlock"`, so screen readers and a hover both still say it.
+
+The glyph is an inline SVG, drawn with the same stroke and inherited colour as the other icons in
+the row, rather than the 🔑 character — that depends on the reader's emoji font, and renders as a
+box on systems without one.
+
+Nothing else changed. Same form, same `act=unlock` post, same passcode field. No server-side code
+was touched.
+
 **1.5.10** — README only: what each iOS app does with a hidden category.
 
 1.5.9's README said both tested apps drop a hidden category and show it again on unhide. Testing
