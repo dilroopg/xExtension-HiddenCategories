@@ -2,6 +2,13 @@
 
 Newest first. These version numbers match the [releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
 
+**1.5.16** — the eye's label wraps between words again.
+
+`white-space: nowrap` (1.5.15) kept "Just Hidden" on one line at the cost of the stacked label. The
+label now wraps at the word boundaries the markup already provides — "Just" above "Hidden" — exactly
+like the favourites button beside it, while `word-break: normal` stops it breaking mid-word. Same
+font size as the favourites button; only the wrapping rule differed.
+
 **1.5.15** — the passcode is digits only, labels stop fracturing mid-word, and the passcode field is
 sized for a passcode.
 

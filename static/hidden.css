@@ -154,11 +154,11 @@ html[data-hc-view="only"] li.tree-folder.category[data-hc-hidden="1"] {
 }
 .hc-view-btn .hc-txt {
 	overflow: hidden;
-	/* one line, elided if it cannot fit. word-break: break-word fractured
-	 * labels mid-word ("Hidde" / "n") once three controls shared the row;
-	 * an ellipsis reads as "too narrow" instead of as broken text. */
-	white-space: nowrap;
-	text-overflow: ellipsis;
+	/* wrap between words, exactly like the favourites button beside it: the
+	 * label is pre-split into one span per word, so "Just Hidden" stacks as
+	 * "Just" / "Hidden". Word-breaking is deliberately left normal, so it can
+	 * only break at those spans and never mid-word ("Hidde" / "n"). */
+	white-space: normal;
 	line-height: 1.15;
 	text-align: left;
 	overflow-wrap: normal;
