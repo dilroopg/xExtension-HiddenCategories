@@ -316,28 +316,34 @@
 		// extension must never clear the row: doing that deletes their button,
 		// and their guard means they never put it back.
 		//
-		// Instead we own a slot of our own inside the row and write only into
-		// that. The row sizes its children generically (flex: 1 1 0), so two
-		// present controls split the width equally without either extension
-		// knowing the other exists.
-		var slot = btnWrap.querySelector(':scope > .hc-slot');
-		if (!slot) {
-			slot = document.createElement('div');
-			slot.className = 'hc-slot';
-			btnWrap.appendChild(slot);
-		}
-		var own = function (node) { slot.innerHTML = ''; slot.appendChild(node); };
+		// We also must not hand our own controls to the row as a single wrapper.
+		// The row sizes every DIRECT child equally (.rs-bar-row > * { flex: 1 1 0 }),
+		// so a wrapper would claim one share and then split it again between the
+		// eye and the lock — leaving our eye narrower than a sibling's single
+		// button. Instead the eye and lock sit in the row as its own direct
+		// children, so they take their shares from the row itself.
+		//
+		// Removing any of our previous controls happens by id, never by clearing
+		// the row — a sibling's button must survive untouched.
+		var removeOwn = function (id) {
+			var el = document.getElementById(id);
+			if (el && el.parentNode) { el.parentNode.removeChild(el); }
+		};
+		removeOwn('hc-unlock-form');
+		removeOwn('hc-view-btn');
+		removeOwn('hc-lock-btn');
 
 		// The eye button is created INSIDE the unlocked branch below, because the
-		// locked branch replaces this slot's contents with a form. Looking it up
+		// locked branch replaces this row's contents with a form. Looking it up
 		// here (as this code used to) returned null whenever the previous render
 		// had been the locked one, and the function bailed out before drawing the
 		// unlock form — the lock rendered as an empty row on every reload.
 
-		// ---- locked: the slot's contents are replaced by the unlock form -----
+		// ---- locked: the unlock form replaces our own controls --------------
 		if (locked) {
 			var form = document.createElement('form');
 			form.className = 'hc-unlock';
+			form.id = 'hc-unlock-form';
 			form.method = 'post';
 			form.action = HC.api || '';
 			form.innerHTML = '<span class="hc-ico hc-lock-ico">' + LOCK_ICON + '</span>'
@@ -351,7 +357,8 @@
 				var f = form.querySelector('.hc-code');
 				if (!f || f.value === '') { ev.preventDefault(); return; }
 			});
-			own(form);
+			// a direct child of the row, so the row sizes it like any sibling button
+			btnWrap.appendChild(form);
 			var fld = form.querySelector('.hc-code');
 			if (fld) { try { fld.focus(); } catch (e) {} }
 			return;
@@ -372,6 +379,7 @@
 			if (HC.lockAvailable) {
 				var lk0 = document.createElement('button');
 				lk0.type = 'button';
+				lk0.id = 'hc-lock-btn';
 				lk0.className = 'hc-lock-btn hc-lock-btn-wide';
 				lk0.title = 'Lock hidden categories (nothing is hidden yet)';
 				lk0.innerHTML = LOCK_ICON + '<span class="hc-txt">Lock</span>';
@@ -379,7 +387,7 @@
 					ev.preventDefault();
 					post({ act: 'lock' });
 				});
-				own(lk0);
+				btnWrap.appendChild(lk0);
 			}
 			return;
 		}
@@ -397,18 +405,17 @@
 		b.title = l.title;
 		b.setAttribute('data-hc-state', view);
 		b.setAttribute('aria-label', l.text + ' \u2014 ' + l.title);
-		// The eye and the lock are one visual unit, so they go into the slot
-		// together: build the pair into a fragment, then swap the slot's
-		// contents once. Writing the slot twice would blank the eye as the
-		// lock is appended.
-		slot.innerHTML = '';
-		slot.appendChild(b);
+		// The eye and the lock are separate direct children of the row, so the
+		// row gives each its own share. The eye is created above and appended
+		// here; the lock is appended after it when a passcode exists.
+		btnWrap.appendChild(b);
 
 		// only offer the lock when a passcode exists, so the button can never
 		// lead to a dead end
 		if (HC.lockAvailable) {
 			var lk = document.createElement('button');
 			lk.type = 'button';
+			lk.id = 'hc-lock-btn';
 			lk.className = 'hc-lock-btn';
 			lk.title = 'Lock: hide everything and require the passcode';
 			lk.setAttribute('aria-label', 'Lock hidden categories');
@@ -417,7 +424,7 @@
 				ev.preventDefault();
 				post({ act: 'lock' });
 			});
-			slot.appendChild(lk);
+			btnWrap.appendChild(lk);
 		}
 	}
 

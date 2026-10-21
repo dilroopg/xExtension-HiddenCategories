@@ -2,6 +2,23 @@
 
 Newest first. These version numbers match the [releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
 
+**1.5.13** — a genuinely even split with the favorites button.
+
+1.5.12 stopped this extension deleting the favorites star, but the widths were still uneven: with
+all three controls on screen the star took noticeably more room than the eye.
+
+The row splits its **direct children** equally, and 1.5.12's fix wrapped this extension's eye and
+lock in a single container. That container claimed one equal share and then divided its own share
+again between the eye and the lock — so the eye got less than the star, which was a direct child
+with a whole share to itself.
+
+The wrapper is gone. The eye and the lock are now direct children of the row like any other
+button, so all three take the same share. Measured at 240px, 280px and 360px row widths, the star
+and the eye come out pixel-identical every time; the icon-only lock keeps its natural width instead
+of claiming a column.
+
+Nothing else changed. No server-side code was touched.
+
 **1.5.12** — the lock no longer eats the favorites button.
 
 Both this extension and **Favorite Categories** put a control in the same row above the sidebar
