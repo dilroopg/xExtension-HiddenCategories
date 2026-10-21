@@ -485,12 +485,32 @@ final class HiddenCategoriesStore
 			case 'enabled':
 				$this->setMetaIfAbsent('first_enabled_at', $now);
 				$this->setMetaIfAbsent('last_enabled_at', $now);
+				$this->seedDefaultLock();
 				break;
 			case 'disabled':
 				$this->setMeta('last_disabled_at', $now);
 				break;
 		}
 		$this->setMeta('last_seen_at', $now);
+	}
+
+	/**
+	 * Arm the lock on a fresh install.
+	 *
+	 * Called from checkpoint('enabled'), which only writes on the FIRST enable.
+	 * A brand new install therefore comes up locked with the default pin, so
+	 * the controls are protected from the moment the extension is switched on
+	 * rather than sitting open until someone remembers to set a pin.
+	 *
+	 * Every write is INSERT OR IGNORE, so an existing pin or lock state is
+	 * never touched: re-enabling, or enabling after choosing your own pin,
+	 * changes nothing.
+	 */
+	public function seedDefaultLock(string $defaultPin = '0000'): void
+	{
+		$this->setMetaIfAbsent('passcode', $defaultPin);
+		$this->setMetaIfAbsent('locked', '1');
+		$this->setMetaIfAbsent('locked_at', date('c'));
 	}
 
 	/**

@@ -193,13 +193,21 @@ that needs encryption at rest, which no FreshRSS extension provides.
 </details>
 
 <details>
-<summary>Optional pin lock</summary>
+<summary>Pin lock (on by default)</summary>
 
 For one situation: you've hidden something, someone walks up to your unlocked computer, and you
-don't want them clicking the eye. Set a pin in the settings — **1 to 6 digits** — and a red lock
-button appears beside the eye:
+don't want them clicking the eye. A red lock button sits beside the eye:
 
 ![red lock button](docs/lock-button.svg)
+
+**It is armed from the moment you enable the extension.** A fresh install comes up locked with the
+pin **`0000`**, so the controls are protected before you have configured anything. Change it in the
+settings — **1 to 6 digits** — and it is yours. A pin you have already set is never overwritten, and
+re-enabling the extension leaves your pin and lock state alone.
+
+Because `0000` is published here, it is not a secret until you change it. That is the same curtain,
+with the drawstring visible: it stops the person who walks up to your screen, not someone who has
+read this README.
 
 It is **deliberately weak**, and that's a choice, not an oversight — stored in **plain text** and
 shown in plain text in the settings, with **no attempt limit or lockout**. Anyone who can read the
@@ -207,7 +215,8 @@ database file can read it, and guessing isn't slowed down. It guards only this e
 controls: it doesn't touch FreshRSS login and doesn't hide anything from *Subscription management*.
 
 Convenient, though: you can always see it, change it, or remove it **without knowing the current
-one**, so you can't lock yourself out. Unlock lasts for your browser session; locking again is one
+one**, so you can't lock yourself out. Clearing the pin field disables the lock entirely. Unlock
+lasts for your browser session; locking again is one
 click. Locking hides the eye and the count row but changes nothing about your feeds — the hiding
 stays applied throughout.
 

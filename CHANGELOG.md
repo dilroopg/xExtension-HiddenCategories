@@ -2,6 +2,20 @@
 
 Newest first. These version numbers match the [releases page](https://github.com/hardlysleeping/xExtension-HiddenCategories/releases).
 
+**1.5.17** — the pin lock is armed by default on a fresh install.
+
+A new install now comes up **locked with the pin `0000`**, so the controls are protected from the
+moment the extension is switched on instead of sitting open until someone remembers to set a pin.
+
+The pin and lock state are seeded with `INSERT OR IGNORE`, from the same `checkpoint('enabled')` path
+that records the first-enable timestamp. Only the first enable writes, so an existing pin is never
+overwritten, a lock state you chose is never changed, and re-enabling the extension leaves both
+alone. Upgrading changes nothing on an install that already has a pin.
+
+`0000` is a published default, so it is a curtain with the drawstring visible: it stops the person
+who walks up to your screen, not someone who has read the README. Change it in the settings (1 to 6
+digits) and it is yours. Clearing the field still disables the lock entirely.
+
 **1.5.16** — the eye's label wraps between words again.
 
 `white-space: nowrap` (1.5.15) kept "Just Hidden" on one line at the cost of the stacked label. The
